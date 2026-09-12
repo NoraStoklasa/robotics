@@ -29,3 +29,17 @@ for that (see below) — the change log does not replace those.
 See `.github/issues/BACKLOG.md` §5 for the complete allowed-toolbox (Weeks 1–8 only) and forbidden list.
 In short: no Webots Camera Recognition or Supervisor ground truth, no hard-coded target-to-station
 mapping, no absolute or machine-specific file paths, no changes to the supplied assessment world.
+
+## Explain in plain English
+
+The team is learning this material, not just shipping it. When you pick up or discuss an issue from
+`.github/issues/`, explain in the chat, in simple English, before diving into code:
+
+- **What the issue is asking for**, in a sentence or two — skip the jargon in the issue file itself.
+- **What needs to be done**, as a short plain list, not the full acceptance-criteria wording.
+- **Why it matters** — what it plugs into, or what breaks without it.
+
+If the issue touches a concept that isn't obvious (e.g. what a moment/centroid is, why A* needs a
+heuristic, what proportional control does), explain that concept simply too, in a sentence or two, the
+first time it comes up — don't assume it's already understood. Keep this in the chat response, short and
+conversational; it is not something that goes into the repo files.
