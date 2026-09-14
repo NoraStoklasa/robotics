@@ -51,12 +51,14 @@ this exact format, so any team member can copy-paste it straight into the shared
 
 ```
 **Issue N — Issue title**
-- bullet, plain English, what was done and why
-- bullet
+- What the issue asked for, one short plain-English bullet
+- What was done, one or two bullets
+- How it was done, one short bullet (approach, not a line-by-line account)
+- Why, one short bullet (what it plugs into / what it proves / what breaks without it)
 - (if code was added/changed) a short fenced code block of the key snippet
 - bullet noting anything still outstanding, if relevant
 ```
 
-Keep bullets short and non-technical where possible — this is for the report and for teammates who
-didn't write the code, not a commit message. Only include a code snippet if it's genuinely useful to
-show (a key function, a config change) — don't paste whole files.
+Keep it very short and simple — plain English, non-technical where possible. This is for the report
+and for teammates who didn't write the code, not a commit message. Only include a code snippet if
+it's genuinely useful to show (a key function, a config change) — don't paste whole files.
