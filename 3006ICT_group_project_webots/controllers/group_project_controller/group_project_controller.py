@@ -76,7 +76,57 @@ def proximity_values():
 # ------------------------------------------------------------------
 # Group implementation
 # ------------------------------------------------------------------
-# TO DO
+
+# Simple movement commands, built on top of set_speed(). We always go
+# through set_speed() so the max-speed limit only ever lives in one place.
+def drive_forward(speed):
+    # Both wheels the same speed = straight line.
+    set_speed(speed, speed)
+
+
+def turn_left(speed):
+    """Curve to the left while still moving forward (left wheel goes slower)."""
+    set_speed(speed * 0.3, speed)
+
+
+def turn_right(speed):
+    """Curve to the right while still moving forward (right wheel goes slower)."""
+    set_speed(speed, speed * 0.3)
+
+
+def rotate_in_place(speed):
+    """Turn on the spot without moving forward (wheels spin opposite ways)."""
+    set_speed(-speed, speed)
+
+
+def stop():
+    set_speed(0.0, 0.0)
+
+
+# Helper functions for working out angles and distances, built on top of
+# the provided get_pose().
+def normalise_angle(angle):
+    """Rewrite any angle so it's between -180 and 180 degrees (in radians)."""
+    return math.atan2(math.sin(angle), math.cos(angle))
+
+
+def distance_to(x, y):
+    # Straight-line distance from where the robot is now to point (x, y).
+    px, py, _ = get_pose()
+    return math.hypot(x - px, y - py)
+
+
+def bearing_to(x, y):
+    """How far the robot needs to turn to face point (x, y). 0 = already
+    facing it, positive = turn left, negative = turn right."""
+    px, py, yaw = get_pose()
+    target_heading = math.atan2(y - py, x - px)
+    return normalise_angle(target_heading - yaw)
+
+
+def pose_to_cell():
+    px, py, _ = get_pose()
+    return world_to_grid(px, py)
 
 # ------------------------------------------------------------------
 # Main
@@ -97,8 +147,7 @@ def main():
             printed_pose = True
         # TO DO
 
-
-        set_speed(0.0, 0.0)
+        stop()
 
 
 if __name__ == "__main__":
