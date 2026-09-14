@@ -87,9 +87,14 @@ def main():
     print("target:", target)
     print("Stations:", [s["id"] for s in CONFIG["stations"]])
     print("Camera:", camera.getWidth(), "x", camera.getHeight())
+    print("Basic timestep:", timestep)
 
+    printed_pose = False
     while robot.step(timestep) != -1:
         pose = get_pose()
+        if not printed_pose:
+            print("Start pose (x, y, yaw):", pose)
+            printed_pose = True
         # TO DO
 
 

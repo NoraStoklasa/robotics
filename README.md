@@ -1,0 +1,61 @@
+# 3006ICT Group Project — Vision-Guided Navigation
+
+Webots R2025a e-puck controller that identifies a named target among 8 observation stations
+using the RGB camera, then navigates to that station's observation position.
+
+## Setup
+
+### 1. Install Webots
+
+Install **Webots R2025a**, the version specified for this course. Launch it once and confirm it
+opens before changing anything.
+
+### 2. Conda Python environment
+
+Use the same Conda environment as the earlier labs. From a terminal:
+
+```
+conda activate <environment_name>
+python -c "import cv2, numpy, matplotlib; print('Python environment OK')"
+python -c "import sys; print(sys.executable)"
+```
+
+Copy the complete path printed by `sys.executable`.
+
+### 3. Point Webots at that Python
+
+In Webots, set the Python command under **Preferences → General → Python command**
+(on macOS: **Webots → Preferences → General → Python command**). Paste the path from step 2 —
+if it contains spaces, enclose it in double quotes. Restart Webots afterwards.
+
+Alternatively, run `3006ICT_group_project_webots/tools/check_python_environment.py` in your
+Conda environment; it prints the same path and confirms `numpy`/`cv2` import correctly.
+
+If you see a Python/package error in Webots: don't change the code first. Check which Python
+executable Webots is using — a controller that works in a terminal but fails in Webots usually
+means an environment mismatch, not a code bug.
+
+### 4. Run the project
+
+Open one of `3006ICT_group_project_webots/worlds/training_start_A.wbt`, `training_start_B.wbt`
+or `training_start_C.wbt` and press **Run**. The controller is `group_project_controller`,
+already named in every supplied world — no extra wiring needed.
+
+Do not continue to implementation work until a baseline world runs cleanly: the first goal is a
+known-good Webots setup, not solving navigation.
+
+## Repository layout
+
+- `3006ICT_group_project_webots/` — supplied Webots project (worlds, controller, maps, config,
+  protos, targets, textures, tools). Kept exactly as supplied; only the controller code inside
+  `controllers/group_project_controller/` is group work.
+- `docs/` — architecture, interfaces, decision log, failure log, team agreement, contribution log.
+- `.github/issues/` — local source of truth for the project backlog (mirrors GitHub issues in
+  `NoraStoklasa/robotics`).
+
+## Rules
+
+- `worlds/`, `maps/`, `protos/`, `targets/` and `textures/` are never modified.
+- The target-to-station assignment may differ between worlds — do not hard-code it.
+- No Webots Camera Recognition or Supervisor ground-truth object identity for target ID.
+- See `.github/issues/BACKLOG.md` §5 for the full allowed-toolbox and forbidden list.

@@ -6,4 +6,7 @@ Keep each entry to one short line of *what* and one of *why*; the diff itself li
 
 | Date | Tool | What changed | Why |
 |---|---|---|---|
-| | | | |
+| 2026-09-14 | Claude Code | Updated `docs/team_agreement.md` ownership section for a 2-person team, removed unfilled date/meeting-slot placeholders, filled member names into `docs/contribution_log.md` | Team is Nora + Kithmini, not 3 as the template assumed; no fixed per-stream owner, both work across streams |
+| 2026-09-14 | Claude Code | Added "Summarise when an issue is finished" section to `AGENTS.md` | So finished-issue summaries come out in one copy-paste-ready format for the shared team Word doc |
+| 2026-09-14 | Claude Code | Added temporary basic-timestep/start-pose prints to `group_project_controller.py`; added `docs/device_baseline.md` | Issue #2 — recorded device baseline across worlds A/B/C, all start poses within tolerance of `CONFIG["starts"]` |
+| 2026-09-14 | Claude Code | Added `README.md`, `CONTRIBUTING.md`, `docs/contribution_log.md` | Issue #1 setup — reproducible install steps, PR/review rules and a running contribution record; team-specific parts of `team_agreement.md` (names, ownership, dates) left for the team meeting |

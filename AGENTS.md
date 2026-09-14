@@ -43,3 +43,20 @@ If the issue touches a concept that isn't obvious (e.g. what a moment/centroid i
 heuristic, what proportional control does), explain that concept simply too, in a sentence or two, the
 first time it comes up — don't assume it's already understood. Keep this in the chat response, short and
 conversational; it is not something that goes into the repo files.
+
+## Summarise when an issue is finished
+
+When an issue is closed (or a meaningful chunk of it is done), write a short summary in the chat, in
+this exact format, so any team member can copy-paste it straight into the shared Word doc:
+
+```
+**Issue N — Issue title**
+- bullet, plain English, what was done and why
+- bullet
+- (if code was added/changed) a short fenced code block of the key snippet
+- bullet noting anything still outstanding, if relevant
+```
+
+Keep bullets short and non-technical where possible — this is for the report and for teammates who
+didn't write the code, not a commit message. Only include a code snippet if it's genuinely useful to
+show (a key function, a config change) — don't paste whole files.
