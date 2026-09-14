@@ -1,7 +1,7 @@
 ---
 title: "[Nav] Load the occupancy grid and verify world-grid conversion"
 labels: [stream:navigation, type:feature, priority:P0]
-milestone: "M3 - Navigation"
+milestone: "M2 - Target identification"
 stream: navigation
 depends_on: ["[Nav] Implement motion primitives and pose utilities"]
 estimate: "S"
