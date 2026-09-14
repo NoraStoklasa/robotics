@@ -41,7 +41,17 @@ imu.enable(timestep)
 for sensor in ps:
     sensor.enable(timestep)
 
-MAX_SPEED = 10
+MAX_SPEED = 6.28  # real e-puck wheel motor limit in Webots (was wrongly set to 10)
+
+# Obstacle-sensor thresholds (Issue #4), measured from logged ps0-ps7 readings
+# across wall/barrier/station approaches at many angles - not guessed from the
+# workshop's example. STOP sits below the weakest verified near-contact
+# reading (station S4's off-centre hit, 226) with real margin, and well below
+# barrier B1's steady wedged reading (~350-380). See docs/proximity_calibration.md,
+# including a self-correction after an early test-methodology bug.
+WARN = 120   # reading above this: something's getting close, be cautious
+STOP = 150   # reading above this: about to touch it, stop / avoid now
+
 GRID = np.load(ROOT / "maps" / "occupancy_grid.npy")
 MISSION = json.loads((ROOT / "config" / "assessment_mission.json").read_text())
 target = MISSION["target"]
@@ -127,6 +137,7 @@ def bearing_to(x, y):
 def pose_to_cell():
     px, py, _ = get_pose()
     return world_to_grid(px, py)
+
 
 # ------------------------------------------------------------------
 # Main
