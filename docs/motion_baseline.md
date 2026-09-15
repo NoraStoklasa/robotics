@@ -2,7 +2,10 @@
 
 Recorded per [Issue #3](.github/issues/03-motion-primitives-pose-utilities.md), measured with
 `drive_forward(5.0)` and `rotate_in_place(5.0)` (commanded wheel speed 5.0 rad/s, below the
-`MAX_SPEED = 10` clamp), each held for 60 timesteps (1.92 s at the 32 ms basic timestep).
+`MAX_SPEED` clamp), each held for 60 timesteps (1.92 s at the 32 ms basic timestep). `MAX_SPEED`
+was `10` at measurement time; Issue #4 later corrected it to the e-puck's real Webots limit,
+`6.28` rad/s (see `docs/failure_log.md`) — 5.0 rad/s stays below the clamp either way, so these
+measurements are unaffected.
 
 ## Achieved speed vs commanded
 
