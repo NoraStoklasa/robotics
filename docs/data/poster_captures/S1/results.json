@@ -1,0 +1,202 @@
+[
+  {
+    "station": "S1",
+    "distance_m": 0.295,
+    "offset_deg": -15,
+    "frame": "docs/data/poster_captures/S1/S1_d0p295_om15.png",
+    "debug": "docs/data/poster_captures/S1/S1_d0p295_om15_bbox.png",
+    "bbox": {
+      "x": 77,
+      "y": 0,
+      "w": 83,
+      "h": 55,
+      "clipped_top": true,
+      "clipped_bottom": false
+    },
+    "pose": [
+      -1.408871524281855,
+      1.3212187227744565,
+      -2.904655486124045
+    ]
+  },
+  {
+    "station": "S1",
+    "distance_m": 0.295,
+    "offset_deg": 0,
+    "frame": "docs/data/poster_captures/S1/S1_d0p295_op00.png",
+    "debug": "docs/data/poster_captures/S1/S1_d0p295_op00_bbox.png",
+    "bbox": {
+      "x": 75,
+      "y": 0,
+      "w": 81,
+      "h": 55,
+      "clipped_top": true,
+      "clipped_bottom": false
+    },
+    "pose": [
+      -1.4117544366284027,
+      1.260196564043932,
+      -3.1099333196439045
+    ]
+  },
+  {
+    "station": "S1",
+    "distance_m": 0.295,
+    "offset_deg": 15,
+    "frame": "docs/data/poster_captures/S1/S1_d0p295_op15.png",
+    "debug": "docs/data/poster_captures/S1/S1_d0p295_op15_bbox.png",
+    "bbox": {
+      "x": 74,
+      "y": 0,
+      "w": 70,
+      "h": 56,
+      "clipped_top": true,
+      "clipped_bottom": false
+    },
+    "pose": [
+      -1.412087658450168,
+      1.1792957293224866,
+      2.9023170381002497
+    ]
+  },
+  {
+    "station": "S1",
+    "distance_m": 0.45,
+    "offset_deg": 0,
+    "frame": "docs/data/poster_captures/S1/S1_d0p450_op00.png",
+    "debug": "docs/data/poster_captures/S1/S1_d0p450_op00_bbox.png",
+    "bbox": {
+      "x": 32,
+      "y": 0,
+      "w": 97,
+      "h": 57,
+      "clipped_top": true,
+      "clipped_bottom": false
+    },
+    "pose": [
+      -1.2645653298044288,
+      1.248108066831762,
+      3.139695080477093
+    ]
+  },
+  {
+    "station": "S1",
+    "distance_m": 0.6,
+    "offset_deg": -15,
+    "frame": "docs/data/poster_captures/S1/S1_d0p600_om15.png",
+    "debug": "docs/data/poster_captures/S1/S1_d0p600_om15_bbox.png",
+    "bbox": {
+      "x": 50,
+      "y": 0,
+      "w": 67,
+      "h": 58,
+      "clipped_top": true,
+      "clipped_bottom": false
+    },
+    "pose": [
+      -1.1142199695114938,
+      1.4075017855913323,
+      -2.8747070674393194
+    ]
+  },
+  {
+    "station": "S1",
+    "distance_m": 0.6,
+    "offset_deg": 0,
+    "frame": "docs/data/poster_captures/S1/S1_d0p600_op00.png",
+    "debug": "docs/data/poster_captures/S1/S1_d0p600_op00_bbox.png",
+    "bbox": {
+      "x": 47,
+      "y": 0,
+      "w": 70,
+      "h": 58,
+      "clipped_top": true,
+      "clipped_bottom": false
+    },
+    "pose": [
+      -1.1078673329107622,
+      1.259821729457262,
+      -3.1147046313275655
+    ]
+  },
+  {
+    "station": "S1",
+    "distance_m": 0.6,
+    "offset_deg": 15,
+    "frame": "docs/data/poster_captures/S1/S1_d0p600_op15.png",
+    "debug": "docs/data/poster_captures/S1/S1_d0p600_op15_bbox.png",
+    "bbox": {
+      "x": 46,
+      "y": 0,
+      "w": 66,
+      "h": 58,
+      "clipped_top": true,
+      "clipped_bottom": false
+    },
+    "pose": [
+      -1.1077177957122217,
+      1.09737355895323,
+      2.8973643082200944
+    ]
+  },
+  {
+    "station": "S1",
+    "distance_m": 0.8,
+    "offset_deg": 0,
+    "frame": "docs/data/poster_captures/S1/S1_d0p800_op00.png",
+    "debug": "docs/data/poster_captures/S1/S1_d0p800_op00_bbox.png",
+    "bbox": {
+      "x": 54,
+      "y": 6,
+      "w": 52,
+      "h": 52,
+      "clipped_top": false,
+      "clipped_bottom": false
+    },
+    "pose": [
+      -0.9148713498622891,
+      1.2451097942671006,
+      3.1341705148752586
+    ]
+  },
+  {
+    "station": "S1",
+    "distance_m": 1.0,
+    "offset_deg": 0,
+    "frame": "docs/data/poster_captures/S1/S1_d1p000_op00.png",
+    "debug": "docs/data/poster_captures/S1/S1_d1p000_op00_bbox.png",
+    "bbox": {
+      "x": 57,
+      "y": 18,
+      "w": 41,
+      "h": 41,
+      "clipped_top": false,
+      "clipped_bottom": false
+    },
+    "pose": [
+      -0.714975305610942,
+      1.2515337448783317,
+      3.131315467658734
+    ]
+  },
+  {
+    "station": "S1",
+    "distance_m": 1.3,
+    "offset_deg": 0,
+    "frame": "docs/data/poster_captures/S1/S1_d1p300_op00.png",
+    "debug": "docs/data/poster_captures/S1/S1_d1p300_op00_bbox.png",
+    "bbox": {
+      "x": 62,
+      "y": 27,
+      "w": 31,
+      "h": 32,
+      "clipped_top": false,
+      "clipped_bottom": false
+    },
+    "pose": [
+      -0.41438210895791133,
+      1.2518683178804295,
+      3.131237051782579
+    ]
+  }
+]

@@ -234,28 +234,57 @@ def _drive_to(x, y, tol=0.02, max_steps=3000):
 
 
 def _measure_poster_bbox(frame_bgr):
-    """Heuristic bounding box for the poster panel: the barrier body is a
-    flat grey (PBRAppearance baseColor ~0.29/0.30/0.32), the poster is a
-    printed image, so flag pixels that are clearly more saturated or a
-    different brightness from the frame's modal (background) value, then
-    take the largest connected blob. Approximate, for this measurement
-    only -- final target identification is Issue #8."""
+    """Heuristic bounding box for the poster panel, two stages:
+
+    1. The barrier body renders as a narrow, very consistent dark band
+       (measured ~35/255 on the HSV value channel in real S1 captures) --
+       much darker than the floor (~200+), the background wall/sky
+       (~70-220), and even the poster's own printed area, regardless of
+       which target image that poster shows. Isolate it first: it is the
+       most reliable, target-colour-agnostic signal in the frame.
+    2. Within the barrier's own footprint only (not the whole frame -- this
+       is what keeps the floor and background out of consideration
+       entirely), the poster panel is a lighter patch than the barrier's
+       own dark body. Take the largest such patch.
+
+    Verified against real captured S1 frames (not synthetic data) before
+    being trusted -- an earlier saturation-based version of this function
+    mistook the floor's saturated wood-grain texture for the poster and
+    returned the whole frame every time. Still approximate, for this
+    measurement only -- final target identification is Issue #8."""
     h = frame_bgr.shape[0]
     hsv = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV)
-    sat = hsv[:, :, 1].astype(int)
     val = hsv[:, :, 2].astype(int)
-    bg_val = int(np.median(val))
-    mask = ((sat > 40) | (np.abs(val - bg_val) > 35)).astype(np.uint8) * 255
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    barrier_mask = ((val >= 20) & (val <= 48)).astype(np.uint8) * 255
+    barrier_mask = cv2.morphologyEx(barrier_mask, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
+    contours, _ = cv2.findContours(barrier_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
         return None
     c = max(contours, key=cv2.contourArea)
-    x, y, bw, bh = cv2.boundingRect(c)
+    bx, by, bw, bh = cv2.boundingRect(c)
+    if bw < 4 or bh < 4:
+        return None
+
+    roi_val = val[by:by + bh, bx:bx + bw]
+    poster_mask = (roi_val > 48).astype(np.uint8) * 255
+    poster_mask = cv2.morphologyEx(poster_mask, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
+    p_contours, _ = cv2.findContours(poster_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not p_contours:
+        # No lighter patch found inside the barrier -- report the barrier's
+        # own bbox so the capture isn't silently dropped, flagged via note.
+        return {
+            "x": bx, "y": by, "w": bw, "h": bh,
+            "clipped_top": bool(by <= 0), "clipped_bottom": bool((by + bh) >= h - 1),
+            "note": "poster not distinguishable from barrier body; reporting barrier bbox",
+        }
+    pc = max(p_contours, key=cv2.contourArea)
+    px, py, pw, ph = cv2.boundingRect(pc)
+    x, y = bx + px, by + py
     return {
-        "x": x, "y": y, "w": bw, "h": bh,
+        "x": x, "y": y, "w": pw, "h": ph,
         "clipped_top": bool(y <= 0),
-        "clipped_bottom": bool((y + bh) >= h - 1),
+        "clipped_bottom": bool((y + ph) >= h - 1),
     }
 
 
