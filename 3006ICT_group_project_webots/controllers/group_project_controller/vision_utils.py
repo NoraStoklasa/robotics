@@ -9,7 +9,7 @@ directly, apart from the dark barrier body and the floor. Tested on real
 captures first: the panel's actual brightness varies hugely by target --
 dark-photographed targets (the backpack, headphones) render barely brighter
 than the plain barrier body itself (measured ~35 vs ~35 on the HSV value
-channel at Station S3, Issue #6), so a direct brightness threshold on the
+channel in a real dark-target capture), so a direct brightness threshold on the
 poster is not reliable across all 8 targets. Two direct-segmentation
 attempts (a per-target brightness/saturation threshold, and a per-frame
 "distance from the modal barrier colour" mask) were tried on real frames and
@@ -40,8 +40,10 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from project_utils import CONFIG, ROOT
+
 # ---- Constants, derived from docs/poster_visibility.md's UNCLIPPED rows
-# (S1 and S3, 0.80-1.30 m standoff, offset 0 -- the only rows with
+# (two measured stations, 0.80-1.30 m standoff, offset 0 -- the only rows with
 # clipped_top=False and clipped_bottom=False): width 31-52 px, height
 # 32-52 px, aspect ratio (w/h) 0.97-1.02. Not magic numbers.
 MIN_POSTER_SIDE_PX = 25          # a margin below the smallest observed side (31 px)
@@ -67,8 +69,8 @@ MIN_POSTER_INTERNAL_STD = 8.0    # grey-value std dev inside the candidate --
 #
 # No single fixed value band works across the whole distance range: a narrow
 # band (25) correctly isolates a small, far barrier (>=1.0 m) but only finds
-# the darkest *core* of a barrier rendered in world B's lighter lighting
-# (Station S6), understating its size; a wide band (55) recovers that whole
+# the darkest *core* of a barrier rendered under lighter local lighting,
+# understating its size; a wide band (55) recovers that whole
 # barrier but, at long range, starts merging the (now small) barrier with
 # adjacent background pixels. Rather than pick one value and accept whichever
 # failure mode it causes, try every band and pool all the candidates -- the
@@ -85,7 +87,7 @@ _SIDE_MARGIN_FRAC = 0.05          # exclude the outer 5% on each side before
                                    # (bearing_to), so the true target is
                                    # roughly centred -- a stray obstacle at
                                    # the frame edge (e.g. a nearby B1-B5
-                                   # navigation barrier, seen at Station S2)
+                                   # navigation barrier, seen from one pose)
                                    # was otherwise merging with the real
                                    # barrier into one bogus wide blob. Kept
                                    # small: a real barrier at 0.8 m is itself
@@ -113,8 +115,8 @@ _POSTER_HEIGHT_FRAC = 0.22 / 0.28
 # that gradient as "barrier". Two independent, real-data-backed guards
 # against this:
 _MAX_VMIN = 45          # every one of 36 real unclipped barrier frames across
-                         # all 3 worlds had vmin <= 43 (the worst case, Station
-                         # S6's own lighting); most sky/floor-only false
+                         # all 3 worlds had vmin <= 43 (the worst lighting
+                         # case); most sky/floor-only false
                          # positives had vmin 55-76. If the frame's own
                          # darkest pixel in the search zone is already this
                          # bright, there is almost certainly no real barrier
@@ -263,7 +265,7 @@ def find_poster_region(image: np.ndarray, debug: bool = False, debug_path: str |
         # was dark enough", not a located object. Tested on real frames:
         # this degenerate case sometimes still beats a real, smaller, more
         # accurate candidate on raw area and was winning wrongly, but for a
-        # few frames (Station S6's own lighting fragments its true barrier
+        # few frames (one hard lighting case fragments its true barrier
         # into pieces too small to individually clear MIN_POSTER_AREA_PX) a
         # degenerate box is the only candidate available at all -- so it's
         # deprioritised, not rejected outright: only used if nothing more
@@ -292,3 +294,197 @@ def find_poster_region(image: np.ndarray, debug: bool = False, debug_path: str |
 
 
 find_poster_region.last_candidates = []
+
+
+# ---------------------------------------------------------------------------
+# Issue #8: target identification on an already-isolated poster crop
+# ---------------------------------------------------------------------------
+
+NO_MATCH = "NO_MATCH"
+TARGET_LABELS = tuple(CONFIG["target_labels"])
+
+# Tuned on the real Issue #6/Issue #7 captures: with the frozen-ResNet head
+# below, the best usable crop for seven of eight target classes clears both
+# thresholds, while central floor/no-poster patches stayed below 0.50. The
+# margin prevents weak "coin flip" classifications from being accepted even
+# when the top softmax score alone is moderately high.
+MIN_CONFIDENCE = 0.50
+MIN_CONFIDENCE_MARGIN = 0.20
+IDENTIFIER_TRAINING_STEPS = 60
+IDENTIFIER_SEED = 0
+
+_IDENTIFIER = None
+
+
+class _TargetIdentifier:
+    def __init__(self):
+        try:
+            import torch
+            import torch.nn as nn
+            import torchvision
+            from torchvision import transforms as T
+        except Exception as exc:  # pragma: no cover - depends on local Webots env
+            raise RuntimeError(
+                "identify() needs torch and torchvision in the active Python environment"
+            ) from exc
+
+        self.torch = torch
+        self.transforms = T
+        self.labels = list(TARGET_LABELS)
+
+        torch.manual_seed(IDENTIFIER_SEED)
+        ref_images = []
+        for label in self.labels:
+            path = ROOT / "textures" / f"target_{label}.png"
+            image = cv2.imread(str(path))
+            if image is None:
+                raise RuntimeError(f"Missing reference image: {path}")
+            ref_images.append(T.functional.to_pil_image(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)))
+
+        self.model = torchvision.models.resnet18(
+            weights=torchvision.models.ResNet18_Weights.IMAGENET1K_V1
+        )
+        for param in self.model.parameters():
+            param.requires_grad = False
+        self.model.fc = nn.Linear(512, len(self.labels))
+
+        augment = T.Compose([
+            T.RandomResizedCrop(112, scale=(0.35, 1.0), ratio=(0.6, 1.4)),
+            T.RandomApply([T.Resize(24), T.Resize(112)], p=0.5),
+            T.ColorJitter(brightness=(0.25, 0.9), contrast=0.4, saturation=0.4, hue=0.03),
+            T.RandomApply([T.GaussianBlur(5, sigma=(0.3, 1.5))], p=0.5),
+            T.RandomRotation(8),
+            T.ToTensor(),
+            T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ])
+        optimiser = torch.optim.Adam(self.model.fc.parameters(), lr=1e-3)
+        self.model.train()
+        for _ in range(IDENTIFIER_TRAINING_STEPS):
+            xs, ys = [], []
+            for class_index, image in enumerate(ref_images):
+                for _ in range(16):
+                    xs.append(augment(image))
+                    ys.append(class_index)
+            loss = torch.nn.functional.cross_entropy(
+                self.model(torch.stack(xs)),
+                torch.tensor(ys),
+            )
+            optimiser.zero_grad()
+            loss.backward()
+            optimiser.step()
+
+        self.model.eval()
+        self.inference_transform = T.Compose([
+            T.ToTensor(),
+            T.Resize((112, 112)),
+            T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ])
+
+    def score(self, crop_bgr: np.ndarray) -> dict:
+        rgb = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2RGB)
+        with self.torch.no_grad():
+            probs = self.model(self.inference_transform(rgb).unsqueeze(0)).softmax(1)[0]
+        values, indices = self.torch.sort(probs, descending=True)
+        best_index = int(indices[0])
+        runner_index = int(indices[1])
+        best_confidence = float(values[0])
+        runner_confidence = float(values[1])
+        return {
+            "raw_label": self.labels[best_index],
+            "confidence": best_confidence,
+            "runner_up": self.labels[runner_index],
+            "runner_up_confidence": runner_confidence,
+            "margin": best_confidence - runner_confidence,
+            "scores": {
+                self.labels[int(i)]: float(probs[int(i)])
+                for i in range(len(self.labels))
+            },
+        }
+
+
+def _get_identifier():
+    global _IDENTIFIER
+    if _IDENTIFIER is None:
+        _IDENTIFIER = _TargetIdentifier()
+    return _IDENTIFIER
+
+
+def identify(crop: np.ndarray) -> tuple[str, float]:
+    """Input: BGR poster crop from `find_poster_region()`.
+
+    Output: `(label, confidence)`, where `label` is one of
+    `CONFIG["target_labels"]` or the exact sentinel `NO_MATCH`.
+
+    Assumptions: `crop` is a non-empty BGR image of a plausible poster region;
+    reference images live under `textures/target_<label>.png`, with labels read
+    only from `CONFIG["target_labels"]`.
+
+    Failure behaviour: returns `(NO_MATCH, confidence)` when the classifier is
+    unavailable, the crop is invalid, the best class is below `MIN_CONFIDENCE`,
+    or the best-vs-runner-up gap is below `MIN_CONFIDENCE_MARGIN`; callers must
+    inspect the next station rather than commit to a target on `NO_MATCH`.
+    """
+    if crop is None or getattr(crop, "size", 0) == 0:
+        result = {
+            "label": NO_MATCH,
+            "raw_label": NO_MATCH,
+            "confidence": 0.0,
+            "runner_up": NO_MATCH,
+            "runner_up_confidence": 0.0,
+            "margin": 0.0,
+            "accepted": False,
+            "reject_reason": "empty_crop",
+            "scores": {},
+        }
+        identify.last_result = result
+        identify.last_scores = {}
+        return NO_MATCH, 0.0
+
+    try:
+        scored = _get_identifier().score(crop)
+    except Exception as exc:  # pragma: no cover - depends on active Python env
+        result = {
+            "label": NO_MATCH,
+            "raw_label": NO_MATCH,
+            "confidence": 0.0,
+            "runner_up": NO_MATCH,
+            "runner_up_confidence": 0.0,
+            "margin": 0.0,
+            "accepted": False,
+            "reject_reason": f"classifier_unavailable:{type(exc).__name__}",
+            "scores": {},
+        }
+        identify.last_result = result
+        identify.last_scores = {}
+        return NO_MATCH, 0.0
+
+    reject_reason = None
+    if scored["confidence"] < MIN_CONFIDENCE:
+        reject_reason = "below_min_confidence"
+    elif scored["margin"] < MIN_CONFIDENCE_MARGIN:
+        reject_reason = "below_margin"
+
+    label = NO_MATCH if reject_reason else scored["raw_label"]
+    result = {
+        **scored,
+        "label": label,
+        "accepted": label != NO_MATCH,
+        "reject_reason": reject_reason,
+    }
+    identify.last_result = result
+    identify.last_scores = scored["scores"]
+    return label, scored["confidence"]
+
+
+identify.last_result = {
+    "label": NO_MATCH,
+    "raw_label": NO_MATCH,
+    "confidence": 0.0,
+    "runner_up": NO_MATCH,
+    "runner_up_confidence": 0.0,
+    "margin": 0.0,
+    "accepted": False,
+    "reject_reason": "not_run",
+    "scores": {},
+}
+identify.last_scores = {}

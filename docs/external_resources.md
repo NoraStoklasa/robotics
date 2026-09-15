@@ -15,7 +15,7 @@ rows here. Backfilling that is still needed before submission -- see the AI-assi
 
 | Date | Resource | Source | Used in | Why permitted |
 |---|---|---|---|---|
-| 2026-09-15 | ResNet-18, ImageNet-pretrained weights | `torchvision.models.ResNet18_Weights.IMAGENET1K_V1` (torchvision, BSD-3) | Issue #6, Option B backbone (frozen; only a new linear head is trained) | Week 4 workshop explicitly covers a pretrained ResNet-18 with a frozen backbone and a retrained head |
+| 2026-09-15 | ResNet-18, ImageNet-pretrained weights | `torchvision.models.ResNet18_Weights.IMAGENET1K_V1` (torchvision, BSD-3) | Issue #6 comparison and Issue #8 `identify()` backbone (frozen; only a new linear head is trained) | Week 4 workshop explicitly covers a pretrained ResNet-18 with a frozen backbone and a retrained head |
 
 ## Third-party libraries (beyond the supplied starter environment)
 
@@ -28,7 +28,7 @@ rows here. Backfilling that is still needed before submission -- see the AI-assi
 
 | Date | Resource | Used in | Why permitted |
 |---|---|---|---|
-| 2026-09-15 | `textures/target_*.png` (the 8 reference images) | Issue #6, as ORB matching templates and ResNet-18 training data | Issue #6 explicitly permits this: "the eight reference images in `textures/` are a supplied project resource and may be used as templates or training data" |
+| 2026-09-15 | `textures/target_*.png` (the 8 reference images) | Issue #6, as ORB matching templates and ResNet-18 training data; Issue #8, as `identify()` training references | Issue #6 explicitly permits this: "the eight reference images in `textures/` are a supplied project resource and may be used as templates or training data" |
 
 ## AI assistance
 
