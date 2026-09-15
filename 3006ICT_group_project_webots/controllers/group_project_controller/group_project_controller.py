@@ -116,8 +116,16 @@ def stop():
 # Helper functions for working out angles and distances, built on top of
 # the provided get_pose().
 def normalise_angle(angle):
-    """Rewrite any angle so it's between -180 and 180 degrees (in radians)."""
-    return math.atan2(math.sin(angle), math.cos(angle))
+    """Rewrite any angle so it falls in (-pi, pi] (in radians).
+
+    atan2's own range includes -pi, which this function must not return:
+    -pi and +pi are the same heading, and the acceptance range is half-open
+    at the bottom. -pi only comes out of atan2(sin(angle), cos(angle)) when
+    sin(angle) rounds to +/-0.0 with cos(angle) negative (e.g. angle == -pi
+    exactly), so remap that one boundary case to +pi.
+    """
+    result = math.atan2(math.sin(angle), math.cos(angle))
+    return math.pi if result == -math.pi else result
 
 
 def distance_to(x, y):

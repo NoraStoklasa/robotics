@@ -6,6 +6,7 @@ Keep each entry to one short line of *what* and one of *why*; the diff itself li
 
 | Date | Tool | What changed | Why |
 |---|---|---|---|
+| 2026-09-15 | Claude Code | `normalise_angle()` in `group_project_controller.py` now remaps its one `atan2` edge case (`-pi`) to `+pi` | Issue #3 acceptance criteria require the range `(-pi, pi]`; `atan2` alone can return `-pi`, and `-pi`/`+pi` are the same heading |
 | 2026-09-15 | Codex | Added `3006ICT_group_project_webots/tools/check_grid.py`, `docs/grid_check.md` and `docs/data/grid_overlay.png` for Issue #10 | Verifies grid metadata, all-cell round trips, world-coordinate sweep, and free start/observe cells without adding navigation or robot-control logic |
 | 2026-09-14 | Claude Code | Added a temporary 3-attempt angle-sweep test in `main()`, world B only: approaches B1's end face at 3 x-offsets, backing off between each, logging to `docs/data/proximity_barrier_B1_angles.csv` | User asked to test more approach directions; checking whether an off-centre hit on B1 spikes higher than the dead-centre hit did (355) |
 | 2026-09-14 | Claude Code | Generalised the angle-sweep to all 3 worlds (A=wall, B=barrier B1, C=station S4), using a perpendicular-offset helper instead of a hardcoded x-offset | User asked to validate `STOP=300` across angles for every obstacle class, not just B1 |
