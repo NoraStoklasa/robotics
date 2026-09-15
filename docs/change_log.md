@@ -6,6 +6,7 @@ Keep each entry to one short line of *what* and one of *why*; the diff itself li
 
 | Date | Tool | What changed | Why |
 |---|---|---|---|
+| 2026-09-15 | Claude Code | Added `docs/contribution_log.md` rows for Nora on Issues #3 and #4; closed Issue #4 on GitHub (checked 4/5 acceptance boxes, left the 0.06 m `WARN` margin unchecked with an explanation) | Both were finished work with no contribution-log entry and (#4) no closed issue, despite `docs/proximity_calibration.md` and `docs/decision_log.md` already showing the work done and the 0.06 m criterion investigated and found physically unreachable |
 | 2026-09-15 | Claude Code | `docs/motion_baseline.md` no longer states `MAX_SPEED = 10` | Issue #4's later fix (same day) changed `MAX_SPEED` to `6.28`, but Issue #3's doc was written first and was never updated; the 5.0 rad/s test speed stays valid under either clamp |
 | 2026-09-15 | Claude Code | `normalise_angle()` in `group_project_controller.py` now remaps its one `atan2` edge case (`-pi`) to `+pi` | Issue #3 acceptance criteria require the range `(-pi, pi]`; `atan2` alone can return `-pi`, and `-pi`/`+pi` are the same heading |
 | 2026-09-15 | Codex | Added `3006ICT_group_project_webots/tools/check_grid.py`, `docs/grid_check.md` and `docs/data/grid_overlay.png` for Issue #10 | Verifies grid metadata, all-cell round trips, world-coordinate sweep, and free start/observe cells without adding navigation or robot-control logic |
