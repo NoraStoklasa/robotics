@@ -1,0 +1,182 @@
+[
+  {
+    "station": "S3",
+    "distance_m": 0.295,
+    "offset_deg": -15,
+    "frame": "docs/data/poster_captures/S3/S3_d0p295_om15.png",
+    "debug": "docs/data/poster_captures/S3/S3_d0p295_om15_bbox.png",
+    "bbox": {
+      "x": 16,
+      "y": 0,
+      "w": 26,
+      "h": 53,
+      "clipped_top": true,
+      "clipped_bottom": false
+    },
+    "pose": [
+      1.2334404551398808,
+      1.4014909025104143,
+      1.8242813117679608
+    ]
+  },
+  {
+    "station": "S3",
+    "distance_m": 0.295,
+    "offset_deg": 0,
+    "frame": "docs/data/poster_captures/S3/S3_d0p295_op00.png",
+    "debug": "docs/data/poster_captures/S3/S3_d0p295_op00_bbox.png",
+    "bbox": {
+      "x": 9,
+      "y": 0,
+      "w": 32,
+      "h": 55,
+      "clipped_top": true,
+      "clipped_bottom": false
+    },
+    "pose": [
+      1.1604996275055361,
+      1.4110822587536391,
+      1.6204889822657293
+    ]
+  },
+  {
+    "station": "S3",
+    "distance_m": 0.295,
+    "offset_deg": 15,
+    "frame": "docs/data/poster_captures/S3/S3_d0p295_op15.png",
+    "debug": "docs/data/poster_captures/S3/S3_d0p295_op15_bbox.png",
+    "bbox": {
+      "x": 4,
+      "y": 0,
+      "w": 37,
+      "h": 55,
+      "clipped_top": true,
+      "clipped_bottom": false
+    },
+    "pose": [
+      1.07799938607466,
+      1.4125575034198963,
+      1.3494668284207505
+    ]
+  },
+  {
+    "station": "S3",
+    "distance_m": 0.45,
+    "offset_deg": 0,
+    "frame": "docs/data/poster_captures/S3/S3_d0p450_op00.png",
+    "debug": "docs/data/poster_captures/S3/S3_d0p450_op00_bbox.png",
+    "bbox": {
+      "x": 29,
+      "y": 0,
+      "w": 25,
+      "h": 57,
+      "clipped_top": true,
+      "clipped_bottom": false
+    },
+    "pose": [
+      1.1471325466491997,
+      1.2653464062157338,
+      1.553086711987306
+    ]
+  },
+  {
+    "station": "S3",
+    "distance_m": 0.6,
+    "offset_deg": -15,
+    "frame": "docs/data/poster_captures/S3/S3_d0p600_om15.png",
+    "debug": "docs/data/poster_captures/S3/S3_d0p600_om15_bbox.png",
+    "bbox": {
+      "x": 47,
+      "y": 0,
+      "w": 30,
+      "h": 58,
+      "clipped_top": true,
+      "clipped_bottom": false
+    },
+    "pose": [
+      1.307475010174845,
+      1.1136595003677126,
+      1.8216462646597305
+    ]
+  },
+  {
+    "station": "S3",
+    "distance_m": 0.6,
+    "offset_deg": 0,
+    "frame": "docs/data/poster_captures/S3/S3_d0p600_op00.png",
+    "debug": "docs/data/poster_captures/S3/S3_d0p600_op00_bbox.png",
+    "bbox": {
+      "x": 45,
+      "y": 0,
+      "w": 28,
+      "h": 58,
+      "clipped_top": true,
+      "clipped_bottom": false
+    },
+    "pose": [
+      1.158150853697532,
+      1.1078160588761152,
+      1.5816339462061426
+    ]
+  },
+  {
+    "station": "S3",
+    "distance_m": 0.8,
+    "offset_deg": 0,
+    "frame": "docs/data/poster_captures/S3/S3_d0p800_op00.png",
+    "debug": "docs/data/poster_captures/S3/S3_d0p800_op00_bbox.png",
+    "bbox": {
+      "x": 51,
+      "y": 6,
+      "w": 52,
+      "h": 52,
+      "clipped_top": false,
+      "clipped_bottom": false
+    },
+    "pose": [
+      1.1482176887923754,
+      0.9146246878564642,
+      1.5515549138614046
+    ]
+  },
+  {
+    "station": "S3",
+    "distance_m": 1.0,
+    "offset_deg": 0,
+    "frame": "docs/data/poster_captures/S3/S3_d1p000_op00.png",
+    "debug": "docs/data/poster_captures/S3/S3_d1p000_op00_bbox.png",
+    "bbox": {
+      "x": 61,
+      "y": 18,
+      "w": 42,
+      "h": 41,
+      "clipped_top": false,
+      "clipped_bottom": false
+    },
+    "pose": [
+      1.1519313213163935,
+      0.7146558721815421,
+      1.583097813808024
+    ]
+  },
+  {
+    "station": "S3",
+    "distance_m": 1.3,
+    "offset_deg": 0,
+    "frame": "docs/data/poster_captures/S3/S3_d1p300_op00.png",
+    "debug": "docs/data/poster_captures/S3/S3_d1p300_op00_bbox.png",
+    "bbox": {
+      "x": 61,
+      "y": 27,
+      "w": 31,
+      "h": 32,
+      "clipped_top": false,
+      "clipped_bottom": false
+    },
+    "pose": [
+      1.1476726487086433,
+      0.4156554821409093,
+      1.551739331512461
+    ]
+  }
+]

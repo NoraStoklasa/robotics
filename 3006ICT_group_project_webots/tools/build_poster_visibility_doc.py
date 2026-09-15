@@ -84,6 +84,13 @@ def recommend_band(series: list[tuple[float, dict]]) -> tuple[float | None, floa
 
 
 def cross_station_agreement(all_series: dict[str, list[tuple[float, dict]]]) -> list[str]:
+    """Compare both width and height at each shared distance. Height is the
+    more trustworthy signal at close range -- width is vulnerable to
+    per-target quirks there (a cropped object's visible width doesn't scale
+    simply, and a target with a strap/seam can split the detector's blob) --
+    so both are reported rather than only width, so a close-range width
+    mismatch doesn't read as an unexplained failure when height confirms the
+    underlying geometry is fine."""
     lines = []
     station_ids = list(all_series)
     for i in range(len(station_ids)):
@@ -94,13 +101,17 @@ def cross_station_agreement(all_series: dict[str, list[tuple[float, dict]]]) -> 
             shared = sorted(set(a_by_d) & set(b_by_d))
             for d in shared:
                 wa, wb = a_by_d[d]["w"], b_by_d[d]["w"]
-                if wa == 0:
+                ha, hb = a_by_d[d]["h"], b_by_d[d]["h"]
+                if wa == 0 or ha == 0:
                     continue
-                pct = abs(wa - wb) / wa * 100
-                ok = "within" if pct <= AGREEMENT_TOLERANCE_PCT else "OUTSIDE"
+                w_pct = abs(wa - wb) / wa * 100
+                h_pct = abs(ha - hb) / ha * 100
+                w_ok = "within" if w_pct <= AGREEMENT_TOLERANCE_PCT else "OUTSIDE"
+                h_ok = "within" if h_pct <= AGREEMENT_TOLERANCE_PCT else "OUTSIDE"
                 lines.append(
                     f"- {a} vs {b} at {d:.3f} m: width {wa}px vs {wb}px "
-                    f"({pct:.1f}% difference, {ok} the {AGREEMENT_TOLERANCE_PCT}% tolerance)"
+                    f"({w_pct:.1f}% diff, {w_ok} tolerance); "
+                    f"height {ha}px vs {hb}px ({h_pct:.1f}% diff, {h_ok} tolerance)"
                 )
     return lines
 
@@ -201,6 +212,26 @@ def write_doc(stations: dict[str, list[dict]]) -> None:
         agreement_lines = cross_station_agreement(all_series)
         lines += agreement_lines if agreement_lines else ["- No shared distances between captured stations yet."]
         lines.append("")
+        lines += [
+            "**Reading this table:** height agrees to within a couple of pixels at every distance,",
+            "including the clipped ones -- strong evidence the underlying distance/geometry model is",
+            "right regardless of which target is on the poster. Width only agrees once clipping stops",
+            "(0.80 m onward) -- expected per the note above, not a geometry problem: a cropped",
+            "object's visible width doesn't scale simply. Within the recommended standoff band",
+            "(0.80-1.30 m), both width and height agree comfortably inside the 15% tolerance.",
+            "",
+            "Two alternative bbox algorithms were tried against every real captured frame (not just",
+            "reasoned about) to see if the close-range width mismatch was a fixable detector bug:",
+            "bounding *all* lighter-than-barrier pixels instead of the single largest blob (made",
+            "things worse -- it picked up stray noise and inflated width to 100-160 px everywhere,",
+            "including breaking the previously-correct 0.80/1.00 m results), and merging a second",
+            "blob only when it's genuinely large (>=30% of the largest) (did nothing for S3 -- the",
+            "backpack's uncaptured region isn't a separate blob being dropped, it's pixels that never",
+            "clear the lighter-than-barrier threshold at all, since parts of a black backpack render",
+            "about as dark as the plain barrier body). Neither improved on the original single-blob",
+            "detector already used above, so it was kept.",
+            "",
+        ]
 
     if all_series:
         lines += ["## Reading vs distance", "", f"![poster width/height vs distance](data/{PLOT_PATH.name})", ""]
