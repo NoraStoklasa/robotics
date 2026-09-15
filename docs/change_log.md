@@ -4,8 +4,7 @@ Every AI assistant (Claude, Codex, Copilot, or any other tool) that changes code
 repo appends one row here before ending its turn — see `AGENTS.md` for the rule. Newest entries first.
 Keep each entry to one short line of *what* and one of *why*; the diff itself lives in git history.
 
-| Date | Tool | What changed | Why |
-|---|---|---|---|
+| 2026-09-15 | Claude Code | Verified `bearing_to`'s `(-pi, pi]`/left-turn convention live in Webots (world C, start pose yaw logged as `-pi`): temporary block in `main()` printed bearing to a point 1 m ahead (`0.0`, want ~0) and 1 m to the left (`1.5707963267948968`, want `+pi/2`); block removed after | Nora asked to confirm the earlier static-reasoning check (against `docs/device_baseline.md`) with a real sim run, since no Webots was available when `bearing_to` was first reviewed |
 | 2026-09-15 | Claude Code | Added `docs/contribution_log.md` rows for Nora on Issues #3 and #4; closed Issue #4 on GitHub (checked 4/5 acceptance boxes, left the 0.06 m `WARN` margin unchecked with an explanation) | Both were finished work with no contribution-log entry and (#4) no closed issue, despite `docs/proximity_calibration.md` and `docs/decision_log.md` already showing the work done and the 0.06 m criterion investigated and found physically unreachable |
 | 2026-09-15 | Claude Code | `docs/motion_baseline.md` no longer states `MAX_SPEED = 10` | Issue #4's later fix (same day) changed `MAX_SPEED` to `6.28`, but Issue #3's doc was written first and was never updated; the 5.0 rad/s test speed stays valid under either clamp |
 | 2026-09-15 | Claude Code | `normalise_angle()` in `group_project_controller.py` now remaps its one `atan2` edge case (`-pi`) to `+pi` | Issue #3 acceptance criteria require the range `(-pi, pi]`; `atan2` alone can return `-pi`, and `-pi`/`+pi` are the same heading |
