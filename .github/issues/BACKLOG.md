@@ -30,8 +30,8 @@ Cross-stream review is how that understanding gets built as the work happens, ra
 | 07 | [Vision] Isolate the poster region in the camera frame | vision | M2 | M | 05 |
 | 08 | [Vision] Identify the target with confidence and a no-match outcome | vision | M2 | L | 06, 07 |
 | 09 | [Vision] Evaluate identification accuracy and distractor rejection | vision | M2 | L | 08 |
+| 10 | [Nav] Load the occupancy grid and verify world-grid conversion | navigation | M2 | S | 03 |
 | 29 | [Sys] Run the first end-to-end mission skeleton with stubbed components | integration | M2 | M | 03, 10, 26 |
-| 10 | [Nav] Load the occupancy grid and verify world-grid conversion | navigation | M3 | S | 03 |
 | 11 | [Nav] Choose and validate an obstacle clearance strategy | navigation | M3 | M | 10 |
 | 12 | [Nav] Implement A* on the 4-connected occupancy grid | navigation | M3 | M | 11 |
 | 13 | [Nav] Follow a waypoint path with P-controlled heading | navigation | M3 | L | 12 |
@@ -50,7 +50,7 @@ Cross-stream review is how that understanding gets built as the work happens, ra
 
 **Split by stream:** vision 7 (05–09, 19, 22) · navigation 9 (03, 04, 10–15, 23) · integration 13 (01, 02, 16–18, 20, 21, 24–29)
 
-**Split by milestone:** M0 = 4 · M1 = 3 · M2 = 6 · M3 = 5 · M4 = 4 · M5 = 7
+**Split by milestone:** M0 = 4 · M1 = 3 · M2 = 7 · M3 = 4 · M4 = 4 · M5 = 7
 
 **Critical path:** 01 → 26 → 02 → 03 → 10 → 29 → 11 → 12 → 13 → 14 → 16 → 17 → 20 → 23 → 25
 
