@@ -7,4 +7,4 @@ centralWidgetVisible: 1
 orthographicViewHeight: 1
 textFiles: 0 "controllers/group_project_controller/group_project_controller.py"
 consoles: Console:All:All
-renderingDevicePerspectives: e-puck:camera;1;0.266667;0;0
+renderingDevicePerspectives: e-puck:camera;1;1.08333;0;0

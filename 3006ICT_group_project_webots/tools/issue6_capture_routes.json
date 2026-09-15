@@ -1,0 +1,524 @@
+{
+ "A": {
+  "start": [
+   -1.45,
+   0.0
+  ],
+  "stations": [
+   "S7",
+   "S8",
+   "S2"
+  ],
+  "steps": [
+   {
+    "kind": "travel",
+    "to_station": "S7",
+    "waypoints": [
+     [
+      -1.375,
+      -0.8250000000000002
+     ],
+     [
+      -1.025,
+      -1.2750000000000004
+     ],
+     [
+      -0.95,
+      -1.245
+     ]
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S7",
+    "distance_m": 0.47,
+    "at": [
+     -0.95,
+     -1.245
+    ],
+    "poster": [
+     -0.95,
+     -1.715
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S7",
+    "distance_m": 0.45,
+    "at": [
+     -0.95,
+     -1.265
+    ],
+    "poster": [
+     -0.95,
+     -1.715
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S7",
+    "distance_m": 0.295,
+    "at": [
+     -0.95,
+     -1.42
+    ],
+    "poster": [
+     -0.95,
+     -1.715
+    ]
+   },
+   {
+    "kind": "travel",
+    "to_station": "S8",
+    "waypoints": [
+     [
+      -1.075,
+      -1.225
+     ],
+     [
+      -1.075,
+      -0.875
+     ],
+     [
+      -1.025,
+      -0.8250000000000002
+     ],
+     [
+      -0.165,
+      -0.45
+     ]
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S8",
+    "distance_m": 1.0,
+    "at": [
+     -0.165,
+     -0.45
+    ],
+    "poster": [
+     -1.165,
+     -0.45
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S8",
+    "distance_m": 0.8,
+    "at": [
+     -0.365,
+     -0.45
+    ],
+    "poster": [
+     -1.165,
+     -0.45
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S8",
+    "distance_m": 0.45,
+    "at": [
+     -0.715,
+     -0.45
+    ],
+    "poster": [
+     -1.165,
+     -0.45
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S8",
+    "distance_m": 0.295,
+    "at": [
+     -0.87,
+     -0.45
+    ],
+    "poster": [
+     -1.165,
+     -0.45
+    ]
+   },
+   {
+    "kind": "travel",
+    "to_station": "S2",
+    "waypoints": [
+     [
+      -0.65,
+      -0.135
+     ]
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S2",
+    "distance_m": 1.0,
+    "at": [
+     -0.65,
+     -0.135
+    ],
+    "poster": [
+     -0.65,
+     0.865
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S2",
+    "distance_m": 0.8,
+    "at": [
+     -0.65,
+     0.065
+    ],
+    "poster": [
+     -0.65,
+     0.865
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S2",
+    "distance_m": 0.45,
+    "at": [
+     -0.65,
+     0.415
+    ],
+    "poster": [
+     -0.65,
+     0.865
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S2",
+    "distance_m": 0.295,
+    "at": [
+     -0.65,
+     0.57
+    ],
+    "poster": [
+     -0.65,
+     0.865
+    ]
+   }
+  ]
+ },
+ "B": {
+  "start": [
+   0.0,
+   -1.45
+  ],
+  "stations": [
+   "S5",
+   "S4",
+   "S6"
+  ],
+  "steps": [
+   {
+    "kind": "travel",
+    "to_station": "S5",
+    "waypoints": [
+     [
+      0.9250000000000003,
+      -1.2750000000000004
+     ],
+     [
+      1.1750000000000003,
+      -1.0250000000000004
+     ],
+     [
+      1.145,
+      -0.55
+     ]
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S5",
+    "distance_m": 0.57,
+    "at": [
+     1.145,
+     -0.55
+    ],
+    "poster": [
+     1.715,
+     -0.55
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S5",
+    "distance_m": 0.45,
+    "at": [
+     1.265,
+     -0.55
+    ],
+    "poster": [
+     1.715,
+     -0.55
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S5",
+    "distance_m": 0.295,
+    "at": [
+     1.42,
+     -0.55
+    ],
+    "poster": [
+     1.715,
+     -0.55
+    ]
+   },
+   {
+    "kind": "travel",
+    "to_station": "S4",
+    "waypoints": [
+     [
+      1.1750000000000003,
+      -0.07500000000000018
+     ],
+     [
+      1.0250000000000004,
+      0.02499999999999991
+     ],
+     [
+      0.5750000000000002,
+      0.02499999999999991
+     ],
+     [
+      0.245,
+      0.45
+     ]
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S4",
+    "distance_m": 0.42,
+    "at": [
+     0.245,
+     0.45
+    ],
+    "poster": [
+     0.665,
+     0.45
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S4",
+    "distance_m": 0.295,
+    "at": [
+     0.37,
+     0.45
+    ],
+    "poster": [
+     0.665,
+     0.45
+    ]
+   },
+   {
+    "kind": "travel",
+    "to_station": "S6",
+    "waypoints": [
+     [
+      0.55,
+      -0.115
+     ]
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S6",
+    "distance_m": 1.0,
+    "at": [
+     0.55,
+     -0.115
+    ],
+    "poster": [
+     0.55,
+     -1.115
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S6",
+    "distance_m": 0.8,
+    "at": [
+     0.55,
+     -0.315
+    ],
+    "poster": [
+     0.55,
+     -1.115
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S6",
+    "distance_m": 0.45,
+    "at": [
+     0.55,
+     -0.665
+    ],
+    "poster": [
+     0.55,
+     -1.115
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S6",
+    "distance_m": 0.295,
+    "at": [
+     0.55,
+     -0.82
+    ],
+    "poster": [
+     0.55,
+     -1.115
+    ]
+   }
+  ]
+ },
+ "C": {
+  "start": [
+   1.45,
+   0.9
+  ],
+  "stations": [
+   "S3",
+   "S1"
+  ],
+  "steps": [
+   {
+    "kind": "travel",
+    "to_station": "S3",
+    "waypoints": [
+     [
+      1.15,
+      0.715
+     ]
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S3",
+    "distance_m": 1.0,
+    "at": [
+     1.15,
+     0.715
+    ],
+    "poster": [
+     1.15,
+     1.715
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S3",
+    "distance_m": 0.8,
+    "at": [
+     1.15,
+     0.915
+    ],
+    "poster": [
+     1.15,
+     1.715
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S3",
+    "distance_m": 0.45,
+    "at": [
+     1.15,
+     1.265
+    ],
+    "poster": [
+     1.15,
+     1.715
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S3",
+    "distance_m": 0.295,
+    "at": [
+     1.15,
+     1.42
+    ],
+    "poster": [
+     1.15,
+     1.715
+    ]
+   },
+   {
+    "kind": "travel",
+    "to_station": "S1",
+    "waypoints": [
+     [
+      -0.715,
+      1.25
+     ]
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S1",
+    "distance_m": 1.0,
+    "at": [
+     -0.715,
+     1.25
+    ],
+    "poster": [
+     -1.715,
+     1.25
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S1",
+    "distance_m": 0.8,
+    "at": [
+     -0.915,
+     1.25
+    ],
+    "poster": [
+     -1.715,
+     1.25
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S1",
+    "distance_m": 0.45,
+    "at": [
+     -1.265,
+     1.25
+    ],
+    "poster": [
+     -1.715,
+     1.25
+    ]
+   },
+   {
+    "kind": "capture",
+    "station": "S1",
+    "distance_m": 0.295,
+    "at": [
+     -1.42,
+     1.25
+    ],
+    "poster": [
+     -1.715,
+     1.25
+    ]
+   }
+  ]
+ }
+}

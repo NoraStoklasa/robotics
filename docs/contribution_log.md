@@ -5,6 +5,7 @@ evidence of teamwork and individual contributions is a -3 deduction).
 
 | Date | Member | Issue | What they did |
 |---|---|---|---|
+| 2026-09-15 | Nora | #6 | Drove the 3-world evaluation-capture sweep in Webots (84 frames across all 8 stations, planned by an A* multi-station route); reviewed and corrected the ORB-vs-ResNet-18 comparison as real bugs surfaced (a crop-detector failure that was silently corrupting results, an inaccurate claim about the cause, a "trade-off" framing that didn't match the actual numbers); chose ResNet-18 (71.1% vs ORB's 53.9% top-1, and faster) |
 | 2026-09-15 | Nora | #5 | Drove the capture sweeps for stations S1 and S3 in Webots (0.295-1.30 m standoffs, +/-15 deg offsets), measured poster bounding boxes vs distance, confirmed the poster does not fit the frame at the real 0.295 m observe distance, and recommended a 0.80-1.30 m identification standoff band, cross-checked between both stations |
 | 2026-09-15 | Kithmini | #10 | Verified grid metadata, full world-grid conversion checks, free start/observe cells, and generated the grid overlay/report |
 | 2026-09-14 | Nora | #4 | Logged proximity readings for wall/barrier/station obstacle classes, plotted reading vs. distance, chose and justified `WARN`/`STOP` from the data (closed with one criterion — the 0.06 m warning margin — found physically unreachable and documented as such) |
