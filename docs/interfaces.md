@@ -12,7 +12,7 @@ Code in issues 08, 13 and 16 must match these signatures exactly — if implemen
 - **Input:** BGR poster crop returned from `find_poster_region(image)`.
 - **Output:** `(label, confidence)`, where `label` is one of `CONFIG["target_labels"]` or the exact sentinel `NO_MATCH`.
 - **Assumptions:** The crop is non-empty and already centred on a plausible poster region; target class names are read from `CONFIG["target_labels"]`; reference images live at `textures/target_<label>.png`.
-- **Failure behaviour:** Return `NO_MATCH` when the classifier is unavailable, the crop is invalid, the best confidence is below `MIN_CONFIDENCE`, or the best-vs-runner-up margin is below `MIN_CONFIDENCE_MARGIN`; the mission state machine must treat `NO_MATCH` as "inspect the next station", not as a target.
+- **Failure behaviour:** Return `NO_MATCH` when the classifier is unavailable, the crop is invalid, the best confidence is below `MIN_CONFIDENCE`, the best-vs-runner-up margin is below `MIN_CONFIDENCE_MARGIN`, or the crop does not pass the same-reference sanity check for the predicted label; the mission state machine must treat `NO_MATCH` as "inspect the next station", not as a target.
 
 ### Navigation → Control
 

@@ -37,6 +37,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.19202688336372375,
    "margin": 0.07494834065437317,
+   "reference_similarity": 0.5184462507161475,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -98,6 +100,8 @@
    "runner_up": "headphones",
    "runner_up_confidence": 0.18334327638149261,
    "margin": 0.13378839194774628,
+   "reference_similarity": 0.49145092548362124,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -139,6 +143,8 @@
    "runner_up": "running_shoe",
    "runner_up_confidence": 0.18111854791641235,
    "margin": 0.2542842626571655,
+   "reference_similarity": 0.12399985328429255,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -160,6 +166,8 @@
    "runner_up": "running_shoe",
    "runner_up_confidence": 0.15574833750724792,
    "margin": 0.3502230942249298,
+   "reference_similarity": 0.12395754645571976,
+   "reference_threshold": -0.05,
    "label": "headphones",
    "accepted": true,
    "reject_reason": null
@@ -181,6 +189,8 @@
    "runner_up": "running_shoe",
    "runner_up_confidence": 0.15259036421775818,
    "margin": 0.12297382950782776,
+   "reference_similarity": 0.040706148381100836,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -202,6 +212,8 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.02193411812186241,
    "margin": 0.9034214951097965,
+   "reference_similarity": 0.45043756788833655,
+   "reference_threshold": 0.0,
    "label": "wall_clock",
    "accepted": true,
    "reject_reason": null
@@ -223,6 +235,8 @@
    "runner_up": "fire_extinguisher",
    "runner_up_confidence": 0.0046813334338366985,
    "margin": 0.9860442434437573,
+   "reference_similarity": 0.05825864536519936,
+   "reference_threshold": 0.0,
    "label": "wall_clock",
    "accepted": true,
    "reject_reason": null
@@ -244,6 +258,8 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.020978959277272224,
    "margin": 0.9056365173310041,
+   "reference_similarity": 0.2976317197605863,
+   "reference_threshold": 0.0,
    "label": "wall_clock",
    "accepted": true,
    "reject_reason": null
@@ -265,6 +281,8 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.004608782473951578,
    "margin": 0.9790891683660448,
+   "reference_similarity": 0.22212964711500546,
+   "reference_threshold": 0.0,
    "label": "wall_clock",
    "accepted": true,
    "reject_reason": null
@@ -286,6 +304,8 @@
    "runner_up": "fire_extinguisher",
    "runner_up_confidence": 0.0028910660184919834,
    "margin": 0.9888382530771196,
+   "reference_similarity": 0.6546901564882096,
+   "reference_threshold": 0.0,
    "label": "wall_clock",
    "accepted": true,
    "reject_reason": null
@@ -307,6 +327,8 @@
    "runner_up": "fire_extinguisher",
    "runner_up_confidence": 0.019948836416006088,
    "margin": 0.9188837446272373,
+   "reference_similarity": 0.1333811292914859,
+   "reference_threshold": 0.0,
    "label": "wall_clock",
    "accepted": true,
    "reject_reason": null
@@ -328,9 +350,11 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.13239441812038422,
    "margin": 0.41537095606327057,
-   "label": "wall_clock",
-   "accepted": true,
-   "reject_reason": null
+   "reference_similarity": -0.006562722392901596,
+   "reference_threshold": 0.0,
+   "label": "NO_MATCH",
+   "accepted": false,
+   "reject_reason": "below_reference_similarity"
   },
   {
    "world": "A",
@@ -349,6 +373,8 @@
    "runner_up": "coffee_mug",
    "runner_up_confidence": 0.1873943954706192,
    "margin": 0.01882345974445343,
+   "reference_similarity": -0.038526296281917054,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -370,9 +396,11 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.12571777403354645,
    "margin": 0.4888065308332443,
-   "label": "wall_clock",
-   "accepted": true,
-   "reject_reason": null
+   "reference_similarity": -0.024542860761522785,
+   "reference_threshold": 0.0,
+   "label": "NO_MATCH",
+   "accepted": false,
+   "reject_reason": "below_reference_similarity"
   },
   {
    "world": "A",
@@ -391,9 +419,11 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.19698578119277954,
    "margin": 0.37262171506881714,
-   "label": "wall_clock",
-   "accepted": true,
-   "reject_reason": null
+   "reference_similarity": -0.10196235890142868,
+   "reference_threshold": 0.0,
+   "label": "NO_MATCH",
+   "accepted": false,
+   "reject_reason": "below_reference_similarity"
   },
   {
    "world": "A",
@@ -412,6 +442,8 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.14449317753314972,
    "margin": 0.4133467525243759,
+   "reference_similarity": 0.187448746754243,
+   "reference_threshold": -0.05,
    "label": "headphones",
    "accepted": true,
    "reject_reason": null
@@ -433,6 +465,8 @@
    "runner_up": "running_shoe",
    "runner_up_confidence": 0.2520904839038849,
    "margin": 0.0868934690952301,
+   "reference_similarity": 0.2243006527463158,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -454,6 +488,8 @@
    "runner_up": "headphones",
    "runner_up_confidence": 0.05764921382069588,
    "margin": 0.7110176496207714,
+   "reference_similarity": 0.2093965702273195,
+   "reference_threshold": 0.1,
    "label": "coffee_mug",
    "accepted": true,
    "reject_reason": null
@@ -475,6 +511,8 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.132365420460701,
    "margin": 0.30392666161060333,
+   "reference_similarity": -0.0004459370834232453,
+   "reference_threshold": 0.1,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -496,6 +534,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.2220543920993805,
    "margin": 0.005028858780860901,
+   "reference_similarity": 0.11838853303565344,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -517,6 +557,8 @@
    "runner_up": "headphones",
    "runner_up_confidence": 0.05184447765350342,
    "margin": 0.7670655250549316,
+   "reference_similarity": 0.10255930204948331,
+   "reference_threshold": 0.1,
    "label": "coffee_mug",
    "accepted": true,
    "reject_reason": null
@@ -538,6 +580,8 @@
    "runner_up": "headphones",
    "runner_up_confidence": 0.023721449077129364,
    "margin": 0.8767746165394783,
+   "reference_similarity": 0.20177982451296278,
+   "reference_threshold": 0.1,
    "label": "coffee_mug",
    "accepted": true,
    "reject_reason": null
@@ -559,6 +603,8 @@
    "runner_up": "headphones",
    "runner_up_confidence": 0.01588480919599533,
    "margin": 0.9425724819302559,
+   "reference_similarity": 0.31903738222677513,
+   "reference_threshold": 0.1,
    "label": "coffee_mug",
    "accepted": true,
    "reject_reason": null
@@ -580,6 +626,8 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.1768445372581482,
    "margin": 0.19331443309783936,
+   "reference_similarity": 0.05179302854517532,
+   "reference_threshold": 0.1,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -601,9 +649,11 @@
    "runner_up": "running_shoe",
    "runner_up_confidence": 0.08506620675325394,
    "margin": 0.5098386332392693,
-   "label": "coffee_mug",
-   "accepted": true,
-   "reject_reason": null
+   "reference_similarity": -0.026997381764549258,
+   "reference_threshold": 0.1,
+   "label": "NO_MATCH",
+   "accepted": false,
+   "reject_reason": "below_reference_similarity"
   },
   {
    "world": "A",
@@ -622,6 +672,8 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.285801500082016,
    "margin": 0.013332337141036987,
+   "reference_similarity": -0.0032014250668645243,
+   "reference_threshold": 0.1,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -643,6 +695,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.13651743531227112,
    "margin": 0.2214520275592804,
+   "reference_similarity": -0.007110673343867688,
+   "reference_threshold": 0.1,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -664,6 +718,8 @@
    "runner_up": "headphones",
    "runner_up_confidence": 0.26781484484672546,
    "margin": 0.06926527619361877,
+   "reference_similarity": 0.031093041412930063,
+   "reference_threshold": 0.1,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -685,6 +741,8 @@
    "runner_up": "soda_can",
    "runner_up_confidence": 0.1379486471414566,
    "margin": 0.17350108921527863,
+   "reference_similarity": -0.030915205742448316,
+   "reference_threshold": 0.1,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -706,6 +764,8 @@
    "runner_up": "headphones",
    "runner_up_confidence": 0.026603175327181816,
    "margin": 0.8663810361176729,
+   "reference_similarity": 0.2518289968172583,
+   "reference_threshold": -0.05,
    "label": "camera",
    "accepted": true,
    "reject_reason": null
@@ -727,6 +787,8 @@
    "runner_up": "wall_clock",
    "runner_up_confidence": 0.017249563708901405,
    "margin": 0.9144779052585363,
+   "reference_similarity": 0.2831334093284114,
+   "reference_threshold": -0.05,
    "label": "camera",
    "accepted": true,
    "reject_reason": null
@@ -748,6 +810,8 @@
    "runner_up": "headphones",
    "runner_up_confidence": 0.07819508016109467,
    "margin": 0.7397621423006058,
+   "reference_similarity": 0.3352558638428678,
+   "reference_threshold": -0.05,
    "label": "camera",
    "accepted": true,
    "reject_reason": null
@@ -769,6 +833,8 @@
    "runner_up": "headphones",
    "runner_up_confidence": 0.04643191397190094,
    "margin": 0.8375345915555954,
+   "reference_similarity": 0.2195257159362285,
+   "reference_threshold": -0.05,
    "label": "camera",
    "accepted": true,
    "reject_reason": null
@@ -790,6 +856,8 @@
    "runner_up": "headphones",
    "runner_up_confidence": 0.24591393768787384,
    "margin": 0.10959549248218536,
+   "reference_similarity": 0.2792934313797202,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -811,6 +879,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.04512031748890877,
    "margin": 0.8705963306128979,
+   "reference_similarity": 0.22097199537396287,
+   "reference_threshold": -0.05,
    "label": "camera",
    "accepted": true,
    "reject_reason": null
@@ -832,6 +902,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.1621457040309906,
    "margin": 0.5308919250965118,
+   "reference_similarity": 0.14056352869404673,
+   "reference_threshold": -0.05,
    "label": "camera",
    "accepted": true,
    "reject_reason": null
@@ -853,6 +925,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.17061582207679749,
    "margin": 0.19367483258247375,
+   "reference_similarity": -0.06070970255509393,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -874,6 +948,8 @@
    "runner_up": "headphones",
    "runner_up_confidence": 0.17247448861598969,
    "margin": 0.014084979891777039,
+   "reference_similarity": -0.12533809253963613,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -895,6 +971,8 @@
    "runner_up": "coffee_mug",
    "runner_up_confidence": 0.19558632373809814,
    "margin": 0.06131485104560852,
+   "reference_similarity": 0.3400612618472854,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1016,6 +1094,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.003927174955606461,
    "margin": 0.9839626513421535,
+   "reference_similarity": 0.6030869632520729,
+   "reference_threshold": -0.05,
    "label": "running_shoe",
    "accepted": true,
    "reject_reason": null
@@ -1037,6 +1117,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.04770318418741226,
    "margin": 0.8610946163535118,
+   "reference_similarity": 0.33975523516102873,
+   "reference_threshold": -0.05,
    "label": "running_shoe",
    "accepted": true,
    "reject_reason": null
@@ -1058,6 +1140,8 @@
    "runner_up": "coffee_mug",
    "runner_up_confidence": 0.178807333111763,
    "margin": 0.1567179411649704,
+   "reference_similarity": -0.03442617182818,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1079,6 +1163,8 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.003438345855101943,
    "margin": 0.9845013695303351,
+   "reference_similarity": 0.6519901612003192,
+   "reference_threshold": -0.05,
    "label": "running_shoe",
    "accepted": true,
    "reject_reason": null
@@ -1100,6 +1186,8 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.20495322346687317,
    "margin": 0.28417301177978516,
+   "reference_similarity": 0.09028856995210864,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1121,6 +1209,8 @@
    "runner_up": "headphones",
    "runner_up_confidence": 0.007182819303125143,
    "margin": 0.9709488921798766,
+   "reference_similarity": 0.6153367593477174,
+   "reference_threshold": -0.05,
    "label": "running_shoe",
    "accepted": true,
    "reject_reason": null
@@ -1142,6 +1232,8 @@
    "runner_up": "running_shoe",
    "runner_up_confidence": 0.20949767529964447,
    "margin": 0.15786339342594147,
+   "reference_similarity": 0.08954377920885655,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1163,6 +1255,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.034493014216423035,
    "margin": 0.9074383527040482,
+   "reference_similarity": 0.10413674225354363,
+   "reference_threshold": -0.05,
    "label": "running_shoe",
    "accepted": true,
    "reject_reason": null
@@ -1204,6 +1298,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.22350895404815674,
    "margin": 0.20514079928398132,
+   "reference_similarity": -0.02228563972666355,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1225,6 +1321,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.17684398591518402,
    "margin": 0.33290328085422516,
+   "reference_similarity": -0.01186141728665198,
+   "reference_threshold": -0.05,
    "label": "headphones",
    "accepted": true,
    "reject_reason": null
@@ -1246,6 +1344,8 @@
    "runner_up": "running_shoe",
    "runner_up_confidence": 0.16756978631019592,
    "margin": 0.08877071738243103,
+   "reference_similarity": -0.134780969225897,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1267,6 +1367,8 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.15138614177703857,
    "margin": 0.3015601933002472,
+   "reference_similarity": 0.5325574760898577,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1288,6 +1390,8 @@
    "runner_up": "headphones",
    "runner_up_confidence": 0.23830394446849823,
    "margin": 0.13442076742649078,
+   "reference_similarity": 0.28226431969635246,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1309,6 +1413,8 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.24379365146160126,
    "margin": 0.1663200408220291,
+   "reference_similarity": 0.5285827914340812,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1330,6 +1436,8 @@
    "runner_up": "headphones",
    "runner_up_confidence": 0.1268596053123474,
    "margin": 0.4679591655731201,
+   "reference_similarity": 0.26995955926526677,
+   "reference_threshold": -0.05,
    "label": "backpack",
    "accepted": true,
    "reject_reason": null
@@ -1351,6 +1459,8 @@
    "runner_up": "headphones",
    "runner_up_confidence": 0.21830549836158752,
    "margin": 0.30262401700019836,
+   "reference_similarity": 0.6399697785089933,
+   "reference_threshold": -0.05,
    "label": "backpack",
    "accepted": true,
    "reject_reason": null
@@ -1372,6 +1482,8 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.16499251127243042,
    "margin": 0.30028843879699707,
+   "reference_similarity": 0.3496939276167209,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1413,6 +1525,8 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.1685466766357422,
    "margin": 0.18477773666381836,
+   "reference_similarity": 0.31521259266530677,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1434,6 +1548,8 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.19567646086215973,
    "margin": 0.03339067101478577,
+   "reference_similarity": -0.03160675808821291,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1495,6 +1611,8 @@
    "runner_up": "coffee_mug",
    "runner_up_confidence": 0.14733768999576569,
    "margin": 0.11396123468875885,
+   "reference_similarity": -0.05950649332389643,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1516,6 +1634,8 @@
    "runner_up": "fire_extinguisher",
    "runner_up_confidence": 0.08099687844514847,
    "margin": 0.7269708439707756,
+   "reference_similarity": 0.022588982182015556,
+   "reference_threshold": -0.05,
    "label": "soda_can",
    "accepted": true,
    "reject_reason": null
@@ -1537,6 +1657,8 @@
    "runner_up": "fire_extinguisher",
    "runner_up_confidence": 0.15293730795383453,
    "margin": 0.4140608161687851,
+   "reference_similarity": 0.7487366066979899,
+   "reference_threshold": -0.05,
    "label": "soda_can",
    "accepted": true,
    "reject_reason": null
@@ -1558,6 +1680,8 @@
    "runner_up": "fire_extinguisher",
    "runner_up_confidence": 0.1257651150226593,
    "margin": 0.3532923758029938,
+   "reference_similarity": 0.5912619812318085,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1579,9 +1703,11 @@
    "runner_up": "fire_extinguisher",
    "runner_up_confidence": 0.15184025466442108,
    "margin": 0.5077911764383316,
-   "label": "soda_can",
-   "accepted": true,
-   "reject_reason": null
+   "reference_similarity": -0.06208309751082527,
+   "reference_threshold": -0.05,
+   "label": "NO_MATCH",
+   "accepted": false,
+   "reject_reason": "below_reference_similarity"
   },
   {
    "world": "C",
@@ -1600,6 +1726,8 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.04382629692554474,
    "margin": 0.7995048612356186,
+   "reference_similarity": 0.7186133785029113,
+   "reference_threshold": -0.05,
    "label": "soda_can",
    "accepted": true,
    "reject_reason": null
@@ -1621,6 +1749,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.10141371190547943,
    "margin": 0.5447870045900345,
+   "reference_similarity": 0.32946287538019003,
+   "reference_threshold": -0.05,
    "label": "soda_can",
    "accepted": true,
    "reject_reason": null
@@ -1642,6 +1772,8 @@
    "runner_up": "running_shoe",
    "runner_up_confidence": 0.15370436012744904,
    "margin": 0.34832046926021576,
+   "reference_similarity": 0.19988501568097186,
+   "reference_threshold": -0.05,
    "label": "soda_can",
    "accepted": true,
    "reject_reason": null
@@ -1663,9 +1795,11 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.06416542083024979,
    "margin": 0.6973321959376335,
-   "label": "soda_can",
-   "accepted": true,
-   "reject_reason": null
+   "reference_similarity": -0.06382475669214542,
+   "reference_threshold": -0.05,
+   "label": "NO_MATCH",
+   "accepted": false,
+   "reject_reason": "below_reference_similarity"
   },
   {
    "world": "C",
@@ -1684,6 +1818,8 @@
    "runner_up": "running_shoe",
    "runner_up_confidence": 0.21924425661563873,
    "margin": 0.23323871195316315,
+   "reference_similarity": 0.22052889586485636,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1705,6 +1841,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.17085404694080353,
    "margin": 0.03179146349430084,
+   "reference_similarity": 0.22202693383836206,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1726,6 +1864,8 @@
    "runner_up": "running_shoe",
    "runner_up_confidence": 0.16084110736846924,
    "margin": 0.30260324478149414,
+   "reference_similarity": 0.0961781509129832,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1747,6 +1887,8 @@
    "runner_up": "camera",
    "runner_up_confidence": 0.17369234561920166,
    "margin": 0.0011850446462631226,
+   "reference_similarity": -0.044815831508252635,
+   "reference_threshold": 0.1,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1760,6 +1902,8 @@
    "runner_up": "coffee_mug",
    "runner_up_confidence": 0.19124434888362885,
    "margin": 0.11926572024822235,
+   "reference_similarity": 0.07632366833442097,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1771,6 +1915,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.22048543393611908,
    "margin": 0.0077259838581085205,
+   "reference_similarity": -0.08523250513432389,
+   "reference_threshold": 0.1,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1782,6 +1928,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.20154739916324615,
    "margin": 0.008400887250900269,
+   "reference_similarity": -0.2687499306449476,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1793,6 +1941,8 @@
    "runner_up": "coffee_mug",
    "runner_up_confidence": 0.14984071254730225,
    "margin": 0.18641814589500427,
+   "reference_similarity": -0.2537651237994079,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1804,6 +1954,8 @@
    "runner_up": "coffee_mug",
    "runner_up_confidence": 0.22244611382484436,
    "margin": 0.036145299673080444,
+   "reference_similarity": -0.3508184289148151,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1815,6 +1967,8 @@
    "runner_up": "coffee_mug",
    "runner_up_confidence": 0.17402954399585724,
    "margin": 0.2279706746339798,
+   "reference_similarity": -0.27798120361921874,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1826,6 +1980,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.25240564346313477,
    "margin": 0.08426782488822937,
+   "reference_similarity": -0.029419202839012604,
+   "reference_threshold": 0.1,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1837,6 +1993,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.22392192482948303,
    "margin": 0.06158411502838135,
+   "reference_similarity": 0.2060981671458636,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1848,6 +2006,8 @@
    "runner_up": "coffee_mug",
    "runner_up_confidence": 0.18314175307750702,
    "margin": 0.03893108665943146,
+   "reference_similarity": 0.3137925767169522,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1859,6 +2019,8 @@
    "runner_up": "wall_clock",
    "runner_up_confidence": 0.17168420553207397,
    "margin": 0.08783671259880066,
+   "reference_similarity": 0.30945641882823477,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1870,6 +2032,8 @@
    "runner_up": "soda_can",
    "runner_up_confidence": 0.1733313500881195,
    "margin": 0.13907858729362488,
+   "reference_similarity": -0.3498614600762532,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1881,6 +2045,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.1586460918188095,
    "margin": 0.015308395028114319,
+   "reference_similarity": 0.09963823417107086,
+   "reference_threshold": 0.1,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1892,6 +2058,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.23212864995002747,
    "margin": 0.029447853565216064,
+   "reference_similarity": 0.08318683820578177,
+   "reference_threshold": 0.1,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1903,6 +2071,8 @@
    "runner_up": "coffee_mug",
    "runner_up_confidence": 0.21473634243011475,
    "margin": 0.25272637605667114,
+   "reference_similarity": 0.15368917624380016,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1914,6 +2084,8 @@
    "runner_up": "coffee_mug",
    "runner_up_confidence": 0.23989412188529968,
    "margin": 0.14922958612442017,
+   "reference_similarity": 0.3660187596663848,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1925,6 +2097,8 @@
    "runner_up": "soda_can",
    "runner_up_confidence": 0.17165258526802063,
    "margin": 0.09247425198554993,
+   "reference_similarity": 0.2073861325964041,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1936,6 +2110,8 @@
    "runner_up": "running_shoe",
    "runner_up_confidence": 0.17220930755138397,
    "margin": 0.3134468048810959,
+   "reference_similarity": 0.22935440421366585,
+   "reference_threshold": -0.05,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"
@@ -1947,6 +2123,8 @@
    "runner_up": "backpack",
    "runner_up_confidence": 0.15992037951946259,
    "margin": 0.08032317459583282,
+   "reference_similarity": 0.07302219682954932,
+   "reference_threshold": 0.1,
    "label": "NO_MATCH",
    "accepted": false,
    "reject_reason": "below_min_confidence"

@@ -148,6 +148,12 @@ _SUBWINDOW_FRAC = 0.6    # width of each half-window, as a fraction of the
                          # (0.6, not 0.5) so a barrier straddling the middle
                          # isn't itself split in half.
 
+_CLOSE_CROP_TOP_PX = 8   # close-range/top-clipped crops can leave the printed
+                         # target too tightly boxed for identification even
+                         # though the poster is visibly present. Expand only
+                         # this narrow case after candidate ranking; larger,
+                         # normally-framed crops are left unchanged for IoU.
+
 
 def _barrier_candidates(frame_bgr: np.ndarray, x0: int, x1: int) -> list[tuple[int, int, int, int, float]]:
     """Every plausible barrier-shaped contour's bbox (x, y, w, h, area)
@@ -228,6 +234,27 @@ def _poster_from_barrier(bx: int, by: int, bw: int, bh: int) -> tuple[int, int, 
     return max(0, cx - pw // 2), max(0, cy - ph // 2), pw, ph
 
 
+def _expanded_close_crop(box: tuple[int, int, int, int], frame_w: int, frame_h: int) -> tuple[int, int, int, int]:
+    """Slightly widen very close, top-clipped crops for identification.
+
+    Tested on the Issue #9 per-world captures: the raw geometric projection can
+    crop off enough of a close target that the classifier rejects it, while a
+    modest expansion still stays within the poster/barrier region. The guard is
+    intentionally tight so ordinary unclipped boxes keep their original geometry.
+    """
+    x, y, w, h = box
+    if y > _CLOSE_CROP_TOP_PX or h >= 50:
+        return box
+
+    nx = max(0, x - int(round(0.15 * w)))
+    ny = 0
+    nw = min(frame_w - nx, int(round(1.60 * w)))
+    nh = min(frame_h - ny, int(round(1.50 * h)))
+    if nw * nh <= MAX_POSTER_AREA_PX:
+        return nx, ny, nw, nh
+    return box
+
+
 def find_poster_region(image: np.ndarray, debug: bool = False, debug_path: str | Path | None = None):
     """Return (x, y, w, h) for the most plausible poster region in `image`
     (BGR, as from camera_bgr()), or None if no plausible candidate survives.
@@ -275,7 +302,18 @@ def find_poster_region(image: np.ndarray, debug: bool = False, debug_path: str |
             "box": (px, py, pw, ph), "area": pw * ph,
             "from_barrier": (bx, by, bw, bh), "degenerate": degenerate,
         })
-    candidates.sort(key=lambda c: (c["degenerate"], -c["area"]))
+    # When two plausible boxes are close in size, prefer the one closer to the
+    # poster's known square shape over the merely larger one. Issue #9 exposed
+    # this with S2 captures where an unrelated left-wall picture was a little
+    # taller/larger than the true mug poster and therefore won on area alone.
+    candidates.sort(key=lambda c: (
+        c["degenerate"],
+        abs(c["box"][2] / c["box"][3] - ASPECT_RATIO_TARGET),
+        -c["area"],
+    ))
+    if candidates:
+        expanded = _expanded_close_crop(candidates[0]["box"], w, h)
+        candidates[0] = {**candidates[0], "box": expanded, "area": expanded[2] * expanded[3]}
     find_poster_region.last_candidates = candidates
 
     chosen = candidates[0]["box"] if candidates else None
@@ -310,6 +348,20 @@ TARGET_LABELS = tuple(CONFIG["target_labels"])
 # when the top softmax score alone is moderately high.
 MIN_CONFIDENCE = 0.50
 MIN_CONFIDENCE_MARGIN = 0.20
+
+# Issue #9 added open-set distractor testing. A closed 8-way classifier will
+# always choose the "nearest" target class for an unrelated image, so a few
+# distractors can look high-confidence even though they are not target posters.
+# This lightweight same-reference check compares the crop to the reference
+# image for the predicted class and rejects the known false-accept patterns
+# without changing the classifier's public interface.
+MIN_REFERENCE_SIMILARITY = -0.05
+MIN_REFERENCE_SIMILARITY_BY_LABEL = {
+    "coffee_mug": 0.10,
+    "fire_extinguisher": 0.20,
+    "wall_clock": 0.00,
+}
+_REFERENCE_SIMILARITY_SIZE = 64
 IDENTIFIER_TRAINING_STEPS = 60
 IDENTIFIER_SEED = 0
 
@@ -334,12 +386,18 @@ class _TargetIdentifier:
 
         torch.manual_seed(IDENTIFIER_SEED)
         ref_images = []
+        ref_arrays = []
         for label in self.labels:
             path = ROOT / "textures" / f"target_{label}.png"
             image = cv2.imread(str(path))
             if image is None:
                 raise RuntimeError(f"Missing reference image: {path}")
+            ref_arrays.append(image)
             ref_images.append(T.functional.to_pil_image(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)))
+        self.reference_features = {
+            label: self._reference_features(image)
+            for label, image in zip(self.labels, ref_arrays)
+        }
 
         self.model = torchvision.models.resnet18(
             weights=torchvision.models.ResNet18_Weights.IMAGENET1K_V1
@@ -380,6 +438,38 @@ class _TargetIdentifier:
             T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
         ])
 
+    @staticmethod
+    def _reference_features(image_bgr: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        resized = cv2.resize(
+            image_bgr,
+            (_REFERENCE_SIMILARITY_SIZE, _REFERENCE_SIMILARITY_SIZE),
+            interpolation=cv2.INTER_AREA,
+        )
+
+        gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY).astype(np.float32)
+        gray = (gray - gray.mean()) / (gray.std() + 1e-6)
+
+        lab = cv2.cvtColor(resized, cv2.COLOR_BGR2LAB).astype(np.float32)
+        lab = (lab - lab.mean(axis=(0, 1), keepdims=True)) / (
+            lab.std(axis=(0, 1), keepdims=True) + 1e-6
+        )
+
+        hsv = cv2.cvtColor(resized, cv2.COLOR_BGR2HSV)
+        hist = cv2.calcHist([hsv], [0, 1], None, [24, 16], [0, 180, 0, 256])
+        cv2.normalize(hist, hist)
+        return gray, lab.reshape(-1), hist
+
+    def _reference_similarity(self, crop_bgr: np.ndarray, label: str) -> float:
+        gray, lab, hist = self._reference_features(crop_bgr)
+        ref_gray, ref_lab, ref_hist = self.reference_features[label]
+
+        gray_score = float((gray * ref_gray).mean())
+        lab_score = float(
+            np.dot(lab, ref_lab) / (np.linalg.norm(lab) * np.linalg.norm(ref_lab) + 1e-6)
+        )
+        hist_score = float(cv2.compareHist(hist, ref_hist, cv2.HISTCMP_CORREL))
+        return 0.55 * gray_score + 0.35 * lab_score + 0.10 * hist_score
+
     def score(self, crop_bgr: np.ndarray) -> dict:
         rgb = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2RGB)
         with self.torch.no_grad():
@@ -389,12 +479,18 @@ class _TargetIdentifier:
         runner_index = int(indices[1])
         best_confidence = float(values[0])
         runner_confidence = float(values[1])
+        raw_label = self.labels[best_index]
+        reference_threshold = MIN_REFERENCE_SIMILARITY_BY_LABEL.get(
+            raw_label, MIN_REFERENCE_SIMILARITY
+        )
         return {
-            "raw_label": self.labels[best_index],
+            "raw_label": raw_label,
             "confidence": best_confidence,
             "runner_up": self.labels[runner_index],
             "runner_up_confidence": runner_confidence,
             "margin": best_confidence - runner_confidence,
+            "reference_similarity": self._reference_similarity(crop_bgr, raw_label),
+            "reference_threshold": reference_threshold,
             "scores": {
                 self.labels[int(i)]: float(probs[int(i)])
                 for i in range(len(self.labels))
@@ -421,8 +517,10 @@ def identify(crop: np.ndarray) -> tuple[str, float]:
 
     Failure behaviour: returns `(NO_MATCH, confidence)` when the classifier is
     unavailable, the crop is invalid, the best class is below `MIN_CONFIDENCE`,
-    or the best-vs-runner-up gap is below `MIN_CONFIDENCE_MARGIN`; callers must
-    inspect the next station rather than commit to a target on `NO_MATCH`.
+    the best-vs-runner-up gap is below `MIN_CONFIDENCE_MARGIN`, or the crop
+    does not look enough like the reference image for the predicted class;
+    callers must inspect the next station rather than commit to a target on
+    `NO_MATCH`.
     """
     if crop is None or getattr(crop, "size", 0) == 0:
         result = {
@@ -432,6 +530,8 @@ def identify(crop: np.ndarray) -> tuple[str, float]:
             "runner_up": NO_MATCH,
             "runner_up_confidence": 0.0,
             "margin": 0.0,
+            "reference_similarity": 0.0,
+            "reference_threshold": None,
             "accepted": False,
             "reject_reason": "empty_crop",
             "scores": {},
@@ -450,6 +550,8 @@ def identify(crop: np.ndarray) -> tuple[str, float]:
             "runner_up": NO_MATCH,
             "runner_up_confidence": 0.0,
             "margin": 0.0,
+            "reference_similarity": 0.0,
+            "reference_threshold": None,
             "accepted": False,
             "reject_reason": f"classifier_unavailable:{type(exc).__name__}",
             "scores": {},
@@ -463,6 +565,8 @@ def identify(crop: np.ndarray) -> tuple[str, float]:
         reject_reason = "below_min_confidence"
     elif scored["margin"] < MIN_CONFIDENCE_MARGIN:
         reject_reason = "below_margin"
+    elif scored["reference_similarity"] < scored["reference_threshold"]:
+        reject_reason = "below_reference_similarity"
 
     label = NO_MATCH if reject_reason else scored["raw_label"]
     result = {
@@ -483,6 +587,8 @@ identify.last_result = {
     "runner_up": NO_MATCH,
     "runner_up_confidence": 0.0,
     "margin": 0.0,
+    "reference_similarity": 0.0,
+    "reference_threshold": None,
     "accepted": False,
     "reject_reason": "not_run",
     "scores": {},

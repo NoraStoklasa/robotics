@@ -11,8 +11,10 @@ reference images. Labels are read from `CONFIG["target_labels"]`; reference file
 built as `target_<label>.png`.
 
 `MIN_CONFIDENCE = 0.50` and `MIN_CONFIDENCE_MARGIN = 0.20`.
-The thresholds reject weak or ambiguous classifications as `NO_MATCH` so later mission logic
-can inspect the next station instead of committing to a wrong one.
+Issue #9 adds a same-reference sanity check after the ResNet head predicts a label, so
+high-confidence distractors can still be rejected when the crop does not look enough like
+that predicted label's supplied `target_<label>.png` image. These checks return `NO_MATCH`
+so later mission logic can inspect the next station instead of committing to a wrong one.
 
 ## Acceptance Checks
 
@@ -38,26 +40,27 @@ can inspect the next station instead of committing to a wrong one.
 ## Confusion Matrix
 
 Rows are true labels; columns are returned labels over all captured frames where the poster
-cropper was run. `NO_MATCH` means the score or margin threshold rejected the crop.
+cropper was run. `NO_MATCH` means the score, margin, or reference-similarity threshold
+rejected the crop.
 
 | Truth \ Returned | `soda_can` | `coffee_mug` | `backpack` | `fire_extinguisher` | `camera` | `running_shoe` | `headphones` | `wall_clock` | `NO_MATCH` |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| `soda_can` | 7 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 5 |
-| `coffee_mug` | 0 | 5 | 0 | 0 | 0 | 0 | 0 | 0 | 7 |
+| `soda_can` | 5 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 7 |
+| `coffee_mug` | 0 | 4 | 0 | 0 | 0 | 0 | 0 | 0 | 8 |
 | `backpack` | 0 | 0 | 2 | 0 | 0 | 0 | 0 | 0 | 10 |
 | `fire_extinguisher` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 6 |
 | `camera` | 0 | 0 | 0 | 0 | 6 | 0 | 0 | 0 | 3 |
 | `running_shoe` | 0 | 0 | 0 | 0 | 0 | 5 | 1 | 0 | 6 |
 | `headphones` | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 8 |
-| `wall_clock` | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 9 | 2 |
+| `wall_clock` | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 6 | 5 |
 
 ## Confidence Summary
 
 | Case | n | Min | Median | Max |
 |---|---:|---:|---:|---:|
-| correct accepted | 35 | 0.502 | 0.843 | 0.992 |
+| correct accepted | 29 | 0.502 | 0.900 | 0.992 |
 | incorrect accepted | 2 | 0.510 | 0.534 | 0.558 |
-| target crop rejected | 47 | 0.000 | 0.276 | 0.489 |
+| target crop rejected | 53 | 0.000 | 0.317 | 0.761 |
 | no-poster crop rejected | 18 | 0.174 | 0.275 | 0.486 |
 
 ## No-Match Crops

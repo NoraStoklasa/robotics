@@ -21,11 +21,11 @@ Experimental evaluation, results and discussion (8 marks); Project complexity an
 - Record the outcome in `docs/vision_evaluation.md`.
 
 ## Acceptance criteria
-- [ ] `python tools/eval_vision.py` runs from a fresh clone using relative paths and writes the confusion matrix as both CSV and a figure.
-- [ ] At the shipped `MIN_CONFIDENCE`, the false-accept rate on all 20 distractor images is 0 — no distractor is ever returned as one of the eight target labels.
-- [ ] Top-1 accuracy on station crops is reported per world for A, B and C, with at least 7 of 8 stations correct in each.
-- [ ] The threshold sweep is plotted with at least 5 threshold values, and the shipped value is marked on the plot.
-- [ ] `docs/vision_evaluation.md` names at least one condition under which identification fails, with the frame that shows it.
+- [x] `python tools/eval_vision.py` runs from a fresh clone using relative paths and writes the confusion matrix as both CSV and a figure.
+- [x] At the shipped `MIN_CONFIDENCE`, the false-accept rate on all 20 distractor images is 0 — no distractor is ever returned as one of the eight target labels.
+- [x] Top-1 accuracy on station crops is reported per world for A, B and C, with at least 7 of 8 stations correct in each.
+- [x] The threshold sweep is plotted with at least 5 threshold values, and the shipped value is marked on the plot.
+- [x] `docs/vision_evaluation.md` names at least one condition under which identification fails, with the frame that shows it.
 
 ## Evidence for the report
 The confusion matrix figure, the threshold-sweep plot and the distractor-rejection table — the core of the vision results section.

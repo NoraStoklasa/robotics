@@ -1,326 +1,50 @@
 [
   {
     "world": "A",
-    "station": "S7",
-    "distance_m": 0.47,
-    "heading_offset_deg": -10,
-    "frame": "docs/data/vision_eval_captures/A/A_S7_d0p470_hm10.png",
-    "pose": [
-      -0.9572805794216507,
-      -1.240632044846858,
-      -1.689445500772018
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S7",
-    "distance_m": 0.47,
-    "heading_offset_deg": 0,
-    "frame": "docs/data/vision_eval_captures/A/A_S7_d0p470_hp00.png",
-    "pose": [
-      -0.9585678280817654,
-      -1.2406067683539244,
-      -1.5538798991628626
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S7",
-    "distance_m": 0.47,
-    "heading_offset_deg": 10,
-    "frame": "docs/data/vision_eval_captures/A/A_S7_d0p470_hp10.png",
-    "pose": [
-      -0.9601542079549866,
-      -1.240841222291012,
-      -1.384612625429448
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S7",
-    "distance_m": 0.45,
-    "heading_offset_deg": -10,
-    "frame": "docs/data/vision_eval_captures/A/A_S7_d0p450_hm10.png",
-    "pose": [
-      -0.954735413820383,
-      -1.2466991646393277,
-      -1.7222796501395021
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S7",
-    "distance_m": 0.45,
-    "heading_offset_deg": 0,
-    "frame": "docs/data/vision_eval_captures/A/A_S7_d0p450_hp00.png",
-    "pose": [
-      -0.9563374389406669,
-      -1.2466102125009968,
-      -1.552990549530245
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S7",
-    "distance_m": 0.45,
-    "heading_offset_deg": 10,
-    "frame": "docs/data/vision_eval_captures/A/A_S7_d0p450_hp10.png",
-    "pose": [
-      -0.9579194995003996,
-      -1.24687481550889,
-      -1.383786304226247
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S7",
-    "distance_m": 0.295,
-    "heading_offset_deg": -10,
-    "frame": "docs/data/vision_eval_captures/A/A_S7_d0p295_hm10.png",
-    "pose": [
-      -0.9470554516248559,
-      -1.4001348573469699,
-      -1.7552947299473474
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S7",
-    "distance_m": 0.295,
-    "heading_offset_deg": 0,
-    "frame": "docs/data/vision_eval_captures/A/A_S7_d0p295_hp00.png",
-    "pose": [
-      -0.9486504153728808,
-      -1.4000379300347296,
-      -1.586370662921069
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S7",
-    "distance_m": 0.295,
-    "heading_offset_deg": 10,
-    "frame": "docs/data/vision_eval_captures/A/A_S7_d0p295_hp10.png",
-    "pose": [
-      -0.9502416207225447,
-      -1.4001909784581887,
-      -1.4174781931407507
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S8",
-    "distance_m": 1.0,
-    "heading_offset_deg": -10,
-    "frame": "docs/data/vision_eval_captures/A/A_S8_d1p000_hm10.png",
-    "pose": [
-      -0.1647136896897859,
-      -0.45305863886860376,
-      2.974954364352152
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S8",
-    "distance_m": 1.0,
-    "heading_offset_deg": 0,
-    "frame": "docs/data/vision_eval_captures/A/A_S8_d1p000_hp00.png",
-    "pose": [
-      -0.16450539546337334,
-      -0.451473947757897,
-      -3.1399973243793275
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S8",
-    "distance_m": 1.0,
-    "heading_offset_deg": 10,
-    "frame": "docs/data/vision_eval_captures/A/A_S8_d1p000_hp10.png",
-    "pose": [
-      -0.164661246502477,
-      -0.44987512075990344,
-      -2.970922595798318
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S8",
-    "distance_m": 0.8,
-    "heading_offset_deg": -10,
-    "frame": "docs/data/vision_eval_captures/A/A_S8_d0p800_hm10.png",
-    "pose": [
-      -0.34560607119386927,
-      -0.45337385607563674,
-      2.974921433527609
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S8",
+    "station": "S1",
     "distance_m": 0.8,
     "heading_offset_deg": 0,
-    "frame": "docs/data/vision_eval_captures/A/A_S8_d0p800_hp00.png",
+    "frame": "docs/data/vision_eval_captures/A/A_S1_d0p800_hp00_issue9.png",
     "pose": [
-      -0.34522596542121936,
-      -0.4518186900888825,
-      -3.1394824550633875
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S8",
-    "distance_m": 0.8,
-    "heading_offset_deg": 10,
-    "frame": "docs/data/vision_eval_captures/A/A_S8_d0p800_hp10.png",
-    "pose": [
-      -0.3454770863224175,
-      -0.4502293612715569,
-      -2.9702663548971495
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S8",
-    "distance_m": 0.45,
-    "heading_offset_deg": -10,
-    "frame": "docs/data/vision_eval_captures/A/A_S8_d0p450_hm10.png",
-    "pose": [
-      -0.6956781783311053,
-      -0.45418437724145694,
-      2.975598303786814
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S8",
-    "distance_m": 0.45,
-    "heading_offset_deg": 0,
-    "frame": "docs/data/vision_eval_captures/A/A_S8_d0p450_hp00.png",
-    "pose": [
-      -0.6955376150481285,
-      -0.4525956613122604,
-      -3.1388030733523116
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S8",
-    "distance_m": 0.45,
-    "heading_offset_deg": 10,
-    "frame": "docs/data/vision_eval_captures/A/A_S8_d0p450_hp10.png",
-    "pose": [
-      -0.6957592156049073,
-      -0.4510074999540237,
-      -2.9695884724277617
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S8",
-    "distance_m": 0.295,
-    "heading_offset_deg": -10,
-    "frame": "docs/data/vision_eval_captures/A/A_S8_d0p295_hm10.png",
-    "pose": [
-      -0.8508742518862428,
-      -0.45393473443162813,
-      2.9758754924580337
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S8",
-    "distance_m": 0.295,
-    "heading_offset_deg": 0,
-    "frame": "docs/data/vision_eval_captures/A/A_S8_d0p295_hp00.png",
-    "pose": [
-      -0.8506464585093343,
-      -0.45264922673398666,
-      3.1109068419243218
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S8",
-    "distance_m": 0.295,
-    "heading_offset_deg": 10,
-    "frame": "docs/data/vision_eval_captures/A/A_S8_d0p295_hp10.png",
-    "pose": [
-      -0.8509081324288685,
-      -0.45073898709011234,
-      -2.9692369654866777
+      -0.9271437320541946,
+      1.222350369366831,
+      3.1072518441037924
     ]
   },
   {
     "world": "A",
     "station": "S2",
-    "distance_m": 1.0,
+    "distance_m": 0.295,
     "heading_offset_deg": -10,
-    "frame": "docs/data/vision_eval_captures/A/A_S2_d1p000_hm10.png",
+    "frame": "docs/data/vision_eval_captures/A/A_S2_d0p295_hm10.png",
     "pose": [
-      -0.6590373487327428,
-      -0.1510711109631206,
-      1.3864099601789894
+      -0.6539125574036436,
+      0.5511781073200793,
+      1.386308808269177
     ]
   },
   {
     "world": "A",
     "station": "S2",
-    "distance_m": 1.0,
+    "distance_m": 0.295,
     "heading_offset_deg": 0,
-    "frame": "docs/data/vision_eval_captures/A/A_S2_d1p000_hp00.png",
+    "frame": "docs/data/vision_eval_captures/A/A_S2_d0p295_hp00.png",
     "pose": [
-      -0.6574389432616861,
-      -0.15113948567159086,
-      1.5547390860171078
+      -0.6523480993178344,
+      0.550873329813074,
+      1.55516206991978
     ]
   },
   {
     "world": "A",
     "station": "S2",
-    "distance_m": 1.0,
+    "distance_m": 0.295,
     "heading_offset_deg": 10,
-    "frame": "docs/data/vision_eval_captures/A/A_S2_d1p000_hp10.png",
+    "frame": "docs/data/vision_eval_captures/A/A_S2_d0p295_hp10.png",
     "pose": [
-      -0.6558337762081765,
-      -0.15113938820960074,
-      1.7235000574033772
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S2",
-    "distance_m": 0.8,
-    "heading_offset_deg": -10,
-    "frame": "docs/data/vision_eval_captures/A/A_S2_d0p800_hm10.png",
-    "pose": [
-      -0.6534391012633156,
-      0.04771106260185819,
-      1.3856951001932247
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S2",
-    "distance_m": 0.8,
-    "heading_offset_deg": 0,
-    "frame": "docs/data/vision_eval_captures/A/A_S2_d0p800_hp00.png",
-    "pose": [
-      -0.6519225459118191,
-      0.0469676151636786,
-      1.554429319208824
-    ]
-  },
-  {
-    "world": "A",
-    "station": "S2",
-    "distance_m": 0.8,
-    "heading_offset_deg": 10,
-    "frame": "docs/data/vision_eval_captures/A/A_S2_d0p800_hp10.png",
-    "pose": [
-      -0.650329361636719,
-      0.047222842452618846,
-      1.7233182118774002
+      -0.650759529040196,
+      0.5510691900338034,
+      1.7240518328157286
     ]
   },
   {
@@ -362,37 +86,373 @@
   {
     "world": "A",
     "station": "S2",
+    "distance_m": 0.8,
+    "heading_offset_deg": -10,
+    "frame": "docs/data/vision_eval_captures/A/A_S2_d0p800_hm10.png",
+    "pose": [
+      -0.6534391012633156,
+      0.04771106260185819,
+      1.3856951001932247
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S2",
+    "distance_m": 0.8,
+    "heading_offset_deg": 0,
+    "frame": "docs/data/vision_eval_captures/A/A_S2_d0p800_hp00.png",
+    "pose": [
+      -0.6519225459118191,
+      0.0469676151636786,
+      1.554429319208824
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S2",
+    "distance_m": 0.8,
+    "heading_offset_deg": 10,
+    "frame": "docs/data/vision_eval_captures/A/A_S2_d0p800_hp10.png",
+    "pose": [
+      -0.650329361636719,
+      0.047222842452618846,
+      1.7233182118774002
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S2",
+    "distance_m": 1.0,
+    "heading_offset_deg": -10,
+    "frame": "docs/data/vision_eval_captures/A/A_S2_d1p000_hm10.png",
+    "pose": [
+      -0.6590373487327428,
+      -0.1510711109631206,
+      1.3864099601789894
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S2",
+    "distance_m": 1.0,
+    "heading_offset_deg": 0,
+    "frame": "docs/data/vision_eval_captures/A/A_S2_d1p000_hp00.png",
+    "pose": [
+      -0.6574389432616861,
+      -0.15113948567159086,
+      1.5547390860171078
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S2",
+    "distance_m": 1.0,
+    "heading_offset_deg": 10,
+    "frame": "docs/data/vision_eval_captures/A/A_S2_d1p000_hp10.png",
+    "pose": [
+      -0.6558337762081765,
+      -0.15113938820960074,
+      1.7235000574033772
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S3",
+    "distance_m": 0.8,
+    "heading_offset_deg": -10,
+    "frame": "docs/data/vision_eval_captures/A/A_S3_d0p800_hm10_issue9.png",
+    "pose": [
+      1.1491218768355176,
+      0.8708217726943572,
+      1.4299342874603678
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S4",
+    "distance_m": 0.42,
+    "heading_offset_deg": -10,
+    "frame": "docs/data/vision_eval_captures/A/A_S4_d0p420_hm10_issue9.png",
+    "pose": [
+      0.23764028720274616,
+      0.4866561962841348,
+      -0.2073549574861847
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S5",
+    "distance_m": 0.57,
+    "heading_offset_deg": 0,
+    "frame": "docs/data/vision_eval_captures/A/A_S5_d0p570_hp00_issue9.png",
+    "pose": [
+      1.1372484371678668,
+      -0.5147546634186472,
+      -0.03311520501888987
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S6",
+    "distance_m": 0.8,
+    "heading_offset_deg": -10,
+    "frame": "docs/data/vision_eval_captures/A/A_S6_d0p800_hm10_issue9.png",
+    "pose": [
+      0.5397398807602825,
+      -0.2721277987370048,
+      -1.7105757169642883
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S7",
     "distance_m": 0.295,
     "heading_offset_deg": -10,
-    "frame": "docs/data/vision_eval_captures/A/A_S2_d0p295_hm10.png",
+    "frame": "docs/data/vision_eval_captures/A/A_S7_d0p295_hm10.png",
     "pose": [
-      -0.6539125574036436,
-      0.5511781073200793,
-      1.386308808269177
+      -0.9470554516248559,
+      -1.4001348573469699,
+      -1.7552947299473474
     ]
   },
   {
     "world": "A",
-    "station": "S2",
+    "station": "S7",
     "distance_m": 0.295,
     "heading_offset_deg": 0,
-    "frame": "docs/data/vision_eval_captures/A/A_S2_d0p295_hp00.png",
+    "frame": "docs/data/vision_eval_captures/A/A_S7_d0p295_hp00.png",
     "pose": [
-      -0.6523480993178344,
-      0.550873329813074,
-      1.55516206991978
+      -0.9486504153728808,
+      -1.4000379300347296,
+      -1.586370662921069
     ]
   },
   {
     "world": "A",
-    "station": "S2",
+    "station": "S7",
     "distance_m": 0.295,
     "heading_offset_deg": 10,
-    "frame": "docs/data/vision_eval_captures/A/A_S2_d0p295_hp10.png",
+    "frame": "docs/data/vision_eval_captures/A/A_S7_d0p295_hp10.png",
     "pose": [
-      -0.650759529040196,
-      0.5510691900338034,
-      1.7240518328157286
+      -0.9502416207225447,
+      -1.4001909784581887,
+      -1.4174781931407507
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S7",
+    "distance_m": 0.45,
+    "heading_offset_deg": -10,
+    "frame": "docs/data/vision_eval_captures/A/A_S7_d0p450_hm10.png",
+    "pose": [
+      -0.954735413820383,
+      -1.2466991646393277,
+      -1.7222796501395021
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S7",
+    "distance_m": 0.45,
+    "heading_offset_deg": 0,
+    "frame": "docs/data/vision_eval_captures/A/A_S7_d0p450_hp00.png",
+    "pose": [
+      -0.9563374389406669,
+      -1.2466102125009968,
+      -1.552990549530245
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S7",
+    "distance_m": 0.45,
+    "heading_offset_deg": 10,
+    "frame": "docs/data/vision_eval_captures/A/A_S7_d0p450_hp10.png",
+    "pose": [
+      -0.9579194995003996,
+      -1.24687481550889,
+      -1.383786304226247
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S7",
+    "distance_m": 0.47,
+    "heading_offset_deg": -10,
+    "frame": "docs/data/vision_eval_captures/A/A_S7_d0p470_hm10.png",
+    "pose": [
+      -0.9572805794216507,
+      -1.240632044846858,
+      -1.689445500772018
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S7",
+    "distance_m": 0.47,
+    "heading_offset_deg": 0,
+    "frame": "docs/data/vision_eval_captures/A/A_S7_d0p470_hp00.png",
+    "pose": [
+      -0.9585678280817654,
+      -1.2406067683539244,
+      -1.5538798991628626
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S7",
+    "distance_m": 0.47,
+    "heading_offset_deg": 10,
+    "frame": "docs/data/vision_eval_captures/A/A_S7_d0p470_hp10.png",
+    "pose": [
+      -0.9601542079549866,
+      -1.240841222291012,
+      -1.384612625429448
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S8",
+    "distance_m": 0.295,
+    "heading_offset_deg": -10,
+    "frame": "docs/data/vision_eval_captures/A/A_S8_d0p295_hm10.png",
+    "pose": [
+      -0.8508742518862428,
+      -0.45393473443162813,
+      2.9758754924580337
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S8",
+    "distance_m": 0.295,
+    "heading_offset_deg": 0,
+    "frame": "docs/data/vision_eval_captures/A/A_S8_d0p295_hp00.png",
+    "pose": [
+      -0.8506464585093343,
+      -0.45264922673398666,
+      3.1109068419243218
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S8",
+    "distance_m": 0.295,
+    "heading_offset_deg": 10,
+    "frame": "docs/data/vision_eval_captures/A/A_S8_d0p295_hp10.png",
+    "pose": [
+      -0.8509081324288685,
+      -0.45073898709011234,
+      -2.9692369654866777
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S8",
+    "distance_m": 0.45,
+    "heading_offset_deg": -10,
+    "frame": "docs/data/vision_eval_captures/A/A_S8_d0p450_hm10.png",
+    "pose": [
+      -0.6956781783311053,
+      -0.45418437724145694,
+      2.975598303786814
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S8",
+    "distance_m": 0.45,
+    "heading_offset_deg": 0,
+    "frame": "docs/data/vision_eval_captures/A/A_S8_d0p450_hp00.png",
+    "pose": [
+      -0.6955376150481285,
+      -0.4525956613122604,
+      -3.1388030733523116
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S8",
+    "distance_m": 0.45,
+    "heading_offset_deg": 10,
+    "frame": "docs/data/vision_eval_captures/A/A_S8_d0p450_hp10.png",
+    "pose": [
+      -0.6957592156049073,
+      -0.4510074999540237,
+      -2.9695884724277617
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S8",
+    "distance_m": 0.8,
+    "heading_offset_deg": -10,
+    "frame": "docs/data/vision_eval_captures/A/A_S8_d0p800_hm10.png",
+    "pose": [
+      -0.34560607119386927,
+      -0.45337385607563674,
+      2.974921433527609
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S8",
+    "distance_m": 0.8,
+    "heading_offset_deg": 0,
+    "frame": "docs/data/vision_eval_captures/A/A_S8_d0p800_hp00.png",
+    "pose": [
+      -0.34522596542121936,
+      -0.4518186900888825,
+      -3.1394824550633875
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S8",
+    "distance_m": 0.8,
+    "heading_offset_deg": 10,
+    "frame": "docs/data/vision_eval_captures/A/A_S8_d0p800_hp10.png",
+    "pose": [
+      -0.3454770863224175,
+      -0.4502293612715569,
+      -2.9702663548971495
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S8",
+    "distance_m": 1.0,
+    "heading_offset_deg": -10,
+    "frame": "docs/data/vision_eval_captures/A/A_S8_d1p000_hm10.png",
+    "pose": [
+      -0.1647136896897859,
+      -0.45305863886860376,
+      2.974954364352152
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S8",
+    "distance_m": 1.0,
+    "heading_offset_deg": 0,
+    "frame": "docs/data/vision_eval_captures/A/A_S8_d1p000_hp00.png",
+    "pose": [
+      -0.16450539546337334,
+      -0.451473947757897,
+      -3.1399973243793275
+    ]
+  },
+  {
+    "world": "A",
+    "station": "S8",
+    "distance_m": 1.0,
+    "heading_offset_deg": 10,
+    "frame": "docs/data/vision_eval_captures/A/A_S8_d1p000_hp10.png",
+    "pose": [
+      -0.164661246502477,
+      -0.44987512075990344,
+      -2.970922595798318
     ]
   }
 ]

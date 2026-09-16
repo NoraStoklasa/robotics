@@ -1,0 +1,191 @@
+{
+ "shipped_min_confidence": 0.5,
+ "min_confidence_margin": 0.2,
+ "target_rows": 100,
+ "distractor_rows": 20,
+ "valid_outputs": 120,
+ "combined_best_station_correct": 7,
+ "combined_best_station_total": 8,
+ "distractor_false_accepts": 0,
+ "distractor_total": 20,
+ "no_match_rate": 0.5583333333333333,
+ "world_best": {
+  "A": {
+   "correct": 7,
+   "available_stations": 8,
+   "stations": [
+    "S1",
+    "S2",
+    "S3",
+    "S4",
+    "S5",
+    "S6",
+    "S7",
+    "S8"
+   ],
+   "missing_stations": []
+  },
+  "B": {
+   "correct": 7,
+   "available_stations": 8,
+   "stations": [
+    "S1",
+    "S2",
+    "S3",
+    "S4",
+    "S5",
+    "S6",
+    "S7",
+    "S8"
+   ],
+   "missing_stations": []
+  },
+  "C": {
+   "correct": 7,
+   "available_stations": 8,
+   "stations": [
+    "S1",
+    "S2",
+    "S3",
+    "S4",
+    "S5",
+    "S6",
+    "S7",
+    "S8"
+   ],
+   "missing_stations": []
+  }
+ },
+ "sweep": [
+  {
+   "threshold": 0.2,
+   "best_station_true_accepts": 7,
+   "best_station_total": 8,
+   "best_station_true_accept_rate": 0.875,
+   "all_crop_correct_accepts": 56,
+   "all_crop_target_total": 100,
+   "all_crop_true_accept_rate": 0.56,
+   "distractor_false_accepts": 0,
+   "distractor_total": 20,
+   "distractor_false_accept_rate": 0.0
+  },
+  {
+   "threshold": 0.3,
+   "best_station_true_accepts": 7,
+   "best_station_total": 8,
+   "best_station_true_accept_rate": 0.875,
+   "all_crop_correct_accepts": 56,
+   "all_crop_target_total": 100,
+   "all_crop_true_accept_rate": 0.56,
+   "distractor_false_accepts": 0,
+   "distractor_total": 20,
+   "distractor_false_accept_rate": 0.0
+  },
+  {
+   "threshold": 0.4,
+   "best_station_true_accepts": 7,
+   "best_station_total": 8,
+   "best_station_true_accept_rate": 0.875,
+   "all_crop_correct_accepts": 56,
+   "all_crop_target_total": 100,
+   "all_crop_true_accept_rate": 0.56,
+   "distractor_false_accepts": 0,
+   "distractor_total": 20,
+   "distractor_false_accept_rate": 0.0
+  },
+  {
+   "threshold": 0.5,
+   "best_station_true_accepts": 7,
+   "best_station_total": 8,
+   "best_station_true_accept_rate": 0.875,
+   "all_crop_correct_accepts": 50,
+   "all_crop_target_total": 100,
+   "all_crop_true_accept_rate": 0.5,
+   "distractor_false_accepts": 0,
+   "distractor_total": 20,
+   "distractor_false_accept_rate": 0.0
+  },
+  {
+   "threshold": 0.6,
+   "best_station_true_accepts": 7,
+   "best_station_total": 8,
+   "best_station_true_accept_rate": 0.875,
+   "all_crop_correct_accepts": 43,
+   "all_crop_target_total": 100,
+   "all_crop_true_accept_rate": 0.43,
+   "distractor_false_accepts": 0,
+   "distractor_total": 20,
+   "distractor_false_accept_rate": 0.0
+  },
+  {
+   "threshold": 0.7,
+   "best_station_true_accepts": 6,
+   "best_station_total": 8,
+   "best_station_true_accept_rate": 0.75,
+   "all_crop_correct_accepts": 37,
+   "all_crop_target_total": 100,
+   "all_crop_true_accept_rate": 0.37,
+   "distractor_false_accepts": 0,
+   "distractor_total": 20,
+   "distractor_false_accept_rate": 0.0
+  },
+  {
+   "threshold": 0.8,
+   "best_station_true_accepts": 6,
+   "best_station_total": 8,
+   "best_station_true_accept_rate": 0.75,
+   "all_crop_correct_accepts": 33,
+   "all_crop_target_total": 100,
+   "all_crop_true_accept_rate": 0.33,
+   "distractor_false_accepts": 0,
+   "distractor_total": 20,
+   "distractor_false_accept_rate": 0.0
+  }
+ ],
+ "failure_example": {
+  "kind": "target",
+  "truth": "fire_extinguisher",
+  "world": "A",
+  "station": "S4",
+  "distance_m": 0.42,
+  "heading_offset_deg": -10,
+  "frame": "docs/data/vision_eval_captures/A/A_S4_d0p420_hm10_issue9.png",
+  "crop_box": [
+   90,
+   8,
+   38,
+   57
+  ],
+  "raw_label": "coffee_mug",
+  "confidence": 0.2608194053173065,
+  "runner_up": "camera",
+  "runner_up_confidence": 0.25747114419937134,
+  "margin": 0.0033482611179351807,
+  "reference_similarity": 0.05557116466866112,
+  "reference_threshold": 0.1,
+  "scores": {
+   "soda_can": 0.13737118244171143,
+   "coffee_mug": 0.2608194053173065,
+   "backpack": 0.08366905152797699,
+   "fire_extinguisher": 0.0642375648021698,
+   "camera": 0.25747114419937134,
+   "running_shoe": 0.08376996964216232,
+   "headphones": 0.04899141192436218,
+   "wall_clock": 0.06367029994726181
+  },
+  "base_reject_reason": null,
+  "label": "NO_MATCH",
+  "accepted": false,
+  "reject_reason": "below_min_confidence",
+  "correct": false
+ },
+ "outputs": {
+  "confusion_csv": "docs/data/vision_confusion_matrix.csv",
+  "confusion_figure": "docs/data/vision_confusion_matrix.png",
+  "precision_recall_csv": "docs/data/vision_precision_recall.csv",
+  "distractor_csv": "docs/data/vision_distractor_rejection.csv",
+  "target_csv": "docs/data/vision_target_predictions.csv",
+  "sweep_csv": "docs/data/vision_threshold_sweep.csv",
+  "sweep_figure": "docs/data/vision_threshold_sweep.png"
+ }
+}
