@@ -1,5 +1,6 @@
 """Coordinate helpers for the 3006ICT group-project world."""
 
+import heapq
 import json
 from pathlib import Path
 
@@ -77,3 +78,55 @@ def apply_clearance_policy(grid, policy, observe_cells=None, radius=4):
             raise ValueError("selective policy requires observe_cells")
         return selective_inflation(grid, observe_cells, radius)
     raise ValueError(f"unknown clearance policy: {policy}")
+
+
+def heuristic(a, b):
+    """Manhattan distance for 4-connected grid motion."""
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+
+def astar(grid, start, goal):
+    """A* on a 4-connected grid (Issue #12). Returns [(row, col), ...] or [] if unreachable.
+
+    Plan on the grid returned by apply_clearance_policy, not the raw grid.
+    """
+    rows, cols = grid.shape
+
+    if grid[start] == 1 or grid[goal] == 1:
+        return []
+
+    open_set = [(heuristic(start, goal), start)]
+    g_cost = {start: 0}
+    came_from = {}
+
+    while open_set:
+        _, current = heapq.heappop(open_set)
+
+        if current == goal:
+            path = [current]
+            while current in came_from:
+                current = came_from[current]
+                path.append(current)
+            path.reverse()
+            return path
+
+        row, col = current
+        neighbours = [(row - 1, col), (row + 1, col), (row, col - 1), (row, col + 1)]
+
+        for neighbour in neighbours:
+            n_row, n_col = neighbour
+
+            if n_row < 0 or n_row >= rows or n_col < 0 or n_col >= cols:
+                continue
+            if grid[n_row, n_col] == 1:
+                continue
+
+            new_g = g_cost[current] + 1
+
+            if neighbour not in g_cost or new_g < g_cost[neighbour]:
+                g_cost[neighbour] = new_g
+                f_cost = new_g + heuristic(neighbour, goal)
+                heapq.heappush(open_set, (f_cost, neighbour))
+                came_from[neighbour] = current
+
+    return []

@@ -21,11 +21,11 @@ Technical approach, implementation and system integration (9 marks).
 - Add a matplotlib visualisation of grid plus path, reusing the plotting shape of `astar_starter.py`.
 
 ## Acceptance criteria
-- [ ] For all 24 start/station pairs, `astar` returns a non-empty path whose first cell is the start and last cell is the goal.
-- [ ] No cell in any returned path has value 1 in the planning grid.
-- [ ] Consecutive cells in every returned path differ by exactly one step in exactly one axis, confirming 4-connectivity.
-- [ ] `astar` returns an empty list, without raising, when the goal is an obstacle cell or is enclosed by obstacles.
-- [ ] Planning one path from start A to the furthest station completes in under 1 second on a team laptop.
+- [x] For all 24 start/station pairs, `astar` returns a non-empty path whose first cell is the start and last cell is the goal.
+- [x] No cell in any returned path has value 1 in the planning grid.
+- [x] Consecutive cells in every returned path differ by exactly one step in exactly one axis, confirming 4-connectivity.
+- [x] `astar` returns an empty list, without raising, when the goal is an obstacle cell or is enclosed by obstacles.
+- [x] Planning one path from start A to the furthest station completes in under 1 second on a team laptop.
 
 ## Evidence for the report
 A figure showing planned paths from each start to a representative station, and a table of path length and planning time per start/station pair.
