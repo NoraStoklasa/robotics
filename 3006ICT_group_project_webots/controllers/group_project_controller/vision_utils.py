@@ -77,6 +77,10 @@ MIN_POSTER_INTERNAL_STD = 8.0    # grey-value std dev inside the candidate --
 # aspect-ratio and area filters below then pick the best one from whichever
 # band happened to isolate it cleanly.
 _BARRIER_VALUE_BANDS = (25, 35, 45, 55)
+_ROBUST_VMIN_PERCENTILE = 5       # second band anchor alongside the zone's
+                                   # true darkest pixel -- see _barrier_candidates
+_ROBUST_VMIN_GAP_MIN = 30         # only use that second anchor once it's this
+                                   # far from the true min -- see _barrier_candidates
 _MIN_BARRIER_SIDE_PX = 8
 _BARRIER_ASPECT_MIN = 0.5         # reject thin slivers (e.g. a target's own
                                    # dark accent, like a hose, being darker
@@ -155,36 +159,78 @@ _CLOSE_CROP_TOP_PX = 8   # close-range/top-clipped crops can leave the printed
                          # normally-framed crops are left unchanged for IoU.
 
 
-def _barrier_candidates(frame_bgr: np.ndarray, x0: int, x1: int) -> list[tuple[int, int, int, int, float]]:
+def _barrier_candidates(
+    frame_bgr: np.ndarray, x0: int, x1: int, allow_robust_anchor: bool = True
+) -> list[tuple[int, int, int, int, float]]:
     """Every plausible barrier-shaped contour's bbox (x, y, w, h, area)
     found within columns [x0, x1) at any of _BARRIER_VALUE_BANDS, largest
     first. Near-duplicate boxes (same barrier found at more than one band)
     are kept -- downstream dedup happens naturally since they produce the
     same poster candidate. Empty if this window's own darkest pixel already
-    looks too bright to be a real barrier (see _MAX_VMIN)."""
+    looks too bright to be a real barrier (see _MAX_VMIN).
+
+    A second anchor is tried, at `_ROBUST_VMIN_PERCENTILE` rather than the
+    zone's true darkest pixel, but only when `allow_robust_anchor` is set --
+    see `_all_barrier_candidates` for why this is gated globally rather than
+    decided per window. Found on real `fire_extinguisher` frames (S4): the
+    target's own black hose renders darker (HSV value ~33-46) than the
+    barrier panel behind it (~88), a thin sliver too narrow to pass
+    `_BARRIER_ASPECT_MIN` on its own, so the true-min anchor finds zero valid
+    candidates anywhere in the frame. Anchoring instead at the percentile
+    lands on the panel directly (measured 88 on all three affected frames),
+    because a thin accessory occupies too little of the search zone to move
+    a low percentile.
+
+    Robust-anchor boxes are also height-capped at their own width. Pixel
+    inspection of the
+    same three frames showed why: the real barrel panel sits directly above
+    a floor of similar HSV value, with no brightness gap between them at
+    this close range, so the wide bands this anchor needs (to bridge the
+    panel's own fragmented dark pixels via the morphological close) also
+    bridge straight through into the floor -- the contour's bbox comes back
+    ~30 px taller than the real barrel (106 vs the ~78 every other
+    same-distance station's barrel measures at this width). The real proto
+    (0.50 x 0.28 m) is never taller than it is wide, so trimming excess
+    height from the bottom (keeping the top, which measured correctly in
+    every case) removes the floor without needing to distinguish it from
+    the barrel by colour."""
     hsv = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV)
     val = hsv[:, :, 2].astype(int)
     zone = val[:, x0:x1]
     if zone.size == 0 or int(zone.min()) > _MAX_VMIN:
         return []
     vmin = int(zone.min())
-    boxes = []
-    for band in _BARRIER_VALUE_BANDS:
-        mask = (val <= vmin + band).astype(np.uint8) * 255
-        mask[:, :x0] = 0
-        mask[:, x1:] = 0
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8))
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        for c in contours:
-            x, y, bw, bh = cv2.boundingRect(c)
-            if bw < _MIN_BARRIER_SIDE_PX or bh < _MIN_BARRIER_SIDE_PX:
-                continue
-            if bw < _BARRIER_ASPECT_MIN * bh:
-                continue
-            area = cv2.contourArea(c)
-            if area < _MIN_SOLIDITY * bw * bh:
-                continue
-            boxes.append((x, y, bw, bh, area))
+
+    def _boxes_for(anchor: int, cap_height: bool) -> list[tuple[int, int, int, int, float]]:
+        found = []
+        for band in _BARRIER_VALUE_BANDS:
+            mask = (val <= anchor + band).astype(np.uint8) * 255
+            mask[:, :x0] = 0
+            mask[:, x1:] = 0
+            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8))
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            for c in contours:
+                x, y, bw, bh = cv2.boundingRect(c)
+                if bw < _MIN_BARRIER_SIDE_PX or bh < _MIN_BARRIER_SIDE_PX:
+                    continue
+                if bw < _BARRIER_ASPECT_MIN * bh:
+                    continue
+                area = cv2.contourArea(c)
+                if area < _MIN_SOLIDITY * bw * bh:
+                    continue
+                if cap_height and bh > bw:
+                    bh = bw
+                found.append((x, y, bw, bh, area))
+        return found
+
+    boxes = _boxes_for(vmin, cap_height=False)
+    if not boxes and allow_robust_anchor:
+        vmin_robust = int(np.percentile(zone, _ROBUST_VMIN_PERCENTILE))
+        # Only worth trying once it's far enough from the true min to be a
+        # genuinely different region -- the fire_extinguisher hose-vs-panel
+        # gap measured 54 on every affected frame.
+        if vmin_robust - vmin >= _ROBUST_VMIN_GAP_MIN:
+            boxes = _boxes_for(vmin_robust, cap_height=True)
     boxes.sort(key=lambda b: b[4], reverse=True)
     return boxes
 
@@ -202,15 +248,33 @@ def _all_barrier_candidates(frame_bgr: np.ndarray) -> list[tuple[int, int, int, 
     not a sign of a vague, unlocalised one -- treating it the same way
     defeated the entire purpose of searching sub-windows in the first
     place (tested: without this distinction, the half-window candidates
-    still lost to the full-window one on raw area, unchanged result)."""
+    still lost to the full-window one on raw area, unchanged result).
+
+    The robust-anchor rescue (see _barrier_candidates) is deliberately
+    decided once here, across every window, rather than window-by-window:
+    tried per-window first and it regressed a real `running_shoe` frame
+    (S6) where the *full-zone* window already found the correct candidate at
+    the true min, but one of the *half*-windows didn't (an ordinary case of
+    a half excluding part of the real object) -- that empty half then
+    invoked the robust anchor on its own and turned up a small, unrelated,
+    almost perfectly square blob elsewhere in the half, which won
+    `find_poster_region`'s aspect-ratio tie-break purely by shape, over the
+    correct, larger candidate the full-zone window had already found. Trying
+    the true min everywhere first, and only falling back to the robust
+    anchor if that leaves every single window empty, makes the fallback
+    unable to outrank a real candidate found anywhere in the frame."""
     w = frame_bgr.shape[1]
     x0, x1 = int(w * _SIDE_MARGIN_FRAC), int(w * (1 - _SIDE_MARGIN_FRAC))
     half = int((x1 - x0) * _SUBWINDOW_FRAC)
     windows = [(x0, x1, x1 - x0), (x0, x0 + half, -1), (x1 - half, x1, -1)]
     out = []
     for wx0, wx1, degenerate_zone_w in windows:
-        for bx, by, bw, bh, area in _barrier_candidates(frame_bgr, wx0, wx1):
+        for bx, by, bw, bh, area in _barrier_candidates(frame_bgr, wx0, wx1, allow_robust_anchor=False):
             out.append((bx, by, bw, bh, area, degenerate_zone_w))
+    if not out:
+        for wx0, wx1, degenerate_zone_w in windows:
+            for bx, by, bw, bh, area in _barrier_candidates(frame_bgr, wx0, wx1, allow_robust_anchor=True):
+                out.append((bx, by, bw, bh, area, degenerate_zone_w))
     return out
 
 

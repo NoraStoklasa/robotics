@@ -41,7 +41,7 @@ another world.
 | `S1` | `soda_can` | `soda_can` | 0.843 | 0.800 | 0.719 | `C_S1_d0p800_hp00.png` |
 | `S2` | `coffee_mug` | `coffee_mug` | 0.958 | 0.943 | 0.319 | `A_S2_d0p800_hp10.png` |
 | `S3` | `backpack` | `backpack` | 0.621 | 0.463 | 0.216 | `B_S3_d0p800_hm10_issue9.png` |
-| `S4` | `fire_extinguisher` | `NO_MATCH` | 0.261 | 0.003 | 0.056 | `A_S4_d0p420_hm10_issue9.png` |
+| `S4` | `fire_extinguisher` | `NO_MATCH` | 0.931 | 0.917 | 0.070 | `B_S4_d0p295_hp00.png` |
 | `S5` | `camera` | `camera` | 0.987 | 0.983 | 0.006 | `B_S5_d0p450_hm10.png` |
 | `S6` | `running_shoe` | `running_shoe` | 0.988 | 0.985 | 0.652 | `B_S6_d0p800_hm10.png` |
 | `S7` | `headphones` | `headphones` | 0.910 | 0.873 | -0.026 | `C_S7_d0p295_hp00_issue9.png` |
@@ -103,9 +103,9 @@ All 20 distractor textures returned `NO_MATCH`; full table: `docs/data/vision_di
 
 ## Known Failure Condition
 
-`A_S4_d0p420_hm10_issue9.png` is the clearest remaining miss: it is station
+`B_S4_d0p295_hp00.png` is the clearest remaining miss: it is station
 `S4` / `fire_extinguisher`, but the best crop still returns
-`NO_MATCH` with confidence 0.261. The frame is a
+`NO_MATCH` with confidence 0.931. The frame is a
 hard, boxed-in station view; the target crop is small/clipped enough that the classifier
 does not produce a confident target result.
 
