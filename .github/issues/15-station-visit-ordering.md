@@ -22,11 +22,11 @@ Project complexity and robustness (6 marks); Experimental evaluation, results an
 - Record the comparison in `docs/decision_visit_order.md`.
 
 ## Acceptance criteria
-- [ ] `next_station` derives its choice from `astar` path length; `grep -nE '"S[1-8]"' ` over the ordering code returns no hard-coded station sequence.
-- [ ] Given the same pose and unvisited set, the function is deterministic across repeated calls.
-- [ ] Starting from A, B and C, the computed first station differs for at least two of the three starts, confirming the order responds to pose.
-- [ ] Visiting all eight stations from the worst-case start completes within the 4:00 simulation budget, measured and recorded.
-- [ ] `docs/decision_visit_order.md` reports total time for both strategies from all three starts.
+- [x] `next_station` derives its choice from `astar` path length; `grep -nE '"S[1-8]"' ` over the ordering code returns no hard-coded station sequence.
+- [x] Given the same pose and unvisited set, the function is deterministic across repeated calls.
+- [x] Starting from A, B and C, the computed first station differs for at least two of the three starts, confirming the order responds to pose.
+- [x] Visiting all eight stations from the worst-case start completes within the 4:00 simulation budget, measured and recorded.
+- [x] `docs/decision_visit_order.md` reports total time for both strategies from all three starts.
 
 ## Evidence for the report
 The strategy comparison table — time to visit all stations, per start, per strategy. Direct evidence that the search order was designed rather than assumed.

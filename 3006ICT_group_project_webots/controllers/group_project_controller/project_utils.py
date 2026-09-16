@@ -154,3 +154,23 @@ def simplify_path(path):
 def path_to_waypoints(path):
     """Grid cell path -> list of world (x, y) waypoints, one per cell centre."""
     return [grid_to_world(row, col) for row, col in path]
+
+
+def next_station(current_pose, unvisited, grid):
+    """Choose the next station to inspect by computed A* path cost (Issue #15).
+
+    current_pose: (x, y, ...) world pose. unvisited: station dicts (a subset
+    of CONFIG["stations"]). grid: the planning grid (Issue #11 policy) to
+    measure path cost on. Returns the station dict reached by the shortest
+    A* path, or None if unvisited is empty. Deterministic: unvisited is
+    sorted by id before comparing, so ties always resolve the same way.
+    """
+    current_cell = world_to_grid(current_pose[0], current_pose[1])
+    best_station, best_cost = None, None
+    for station in sorted(unvisited, key=lambda s: s["id"]):
+        goal_cell = world_to_grid(*station["observe"])
+        path = astar(grid, current_cell, goal_cell)
+        cost = len(path) if path else float("inf")
+        if best_cost is None or cost < best_cost:
+            best_station, best_cost = station, cost
+    return best_station
