@@ -37,16 +37,20 @@ a different set, update that document in the same pull request so the diagram st
 | NAVIGATE | Drive to the chosen station's `observe` position with safety override active (`Navigator`, Issue #14) | -> OBSERVE (arrived, `Navigator.done()`); -> PLAN (failed to arrive within the step budget -- station marked visited and skipped, component-failure path) |
 | OBSERVE | Stop and hold position for a short settle period so the camera isn't capturing mid-motion | -> IDENTIFY (settled) |
 | IDENTIFY | Capture consecutive frames and run `identify()` (Issue #8) on each; require `IDENTIFY_CONSENSUS_FRAMES` consecutive frames agreeing on the same non-`NO_MATCH` label before accepting it | -> GOTO_OBSERVE (consensus reached and the agreed label is the mission target); -> PLAN (consensus reached on a non-target label, or `IDENTIFY_MAX_FRAMES` reached with no consensus -- station marked visited either way, both are defined "component gave an unusable answer" paths) |
-| GOTO_OBSERVE | One final precise approach to the confirmed station's exact `observe` position (`Navigator` again, idempotent if already there) | -> STOP (arrived, or the step budget elapsed -- stops where it is rather than looping forever) |
+| GOTO_OBSERVE | One final precise approach to the confirmed station's exact `observe` position (`Navigator` again, idempotent if already there). Arrival is decided by an explicit `distance_to(observe) <= ARRIVAL_TOLERANCE` check (Issue #17), never by the step budget alone | -> FINAL_ALIGN (within `ARRIVAL_TOLERANCE`); -> FAILED (step budget elapsed without closing to `ARRIVAL_TOLERANCE` -- the target is already confirmed, so there is no other station left to try) |
+| FINAL_ALIGN | Rotate on the spot to the station's `observe_yaw` (Issue #17), same as `OBSERVE`'s heading step but this is the mission's literal, graded final heading | -> FINAL_HOLD (aligned within `OBSERVE_YAW_TOLERANCE`); -> FAILED (step budget elapsed without aligning) |
+| FINAL_HOLD | Hold `stop()` for `FINAL_HOLD_STEPS` (20) consecutive control steps, then print the final pose, distance-to-`observe` and heading error (Issue #17 -- the printed evidence for the live demo) | -> STOP (hold complete) |
 | STOP | Halt: `stop()` (Issue #3), motors at zero | terminal |
 | FAILED | Halt: `stop()` (Issue #3), motors at zero, mission unsuccessful | terminal |
 
 Every non-terminal state has a defined response to its component returning nothing or failing
-outright (see `docs/interfaces.md`'s per-module "Failure behaviour" rows): `NAVIGATE` and
-`GOTO_OBSERVE` both cap the number of control steps they will spend trying, `IDENTIFY` caps the
-number of frames it will examine before giving up on a station, and no failure path re-enters a
-state that could loop forever without making progress (every failure marks the current station
-visited and returns to `PLAN`, which always terminates because `unvisited` only shrinks).
+outright (see `docs/interfaces.md`'s per-module "Failure behaviour" rows): `NAVIGATE`,
+`GOTO_OBSERVE` and `FINAL_ALIGN` all cap the number of control steps they will spend trying,
+`IDENTIFY` caps the number of frames it will examine before giving up on a station, and no failure
+path re-enters a state that could loop forever without making progress (`NAVIGATE` and `IDENTIFY`
+failures mark the current station visited and return to `PLAN`, which always terminates because
+`unvisited` only shrinks; `GOTO_OBSERVE`/`FINAL_ALIGN` failures go straight to `FAILED` since the
+target is already confirmed by that point and there is nothing left to retry).
 
 ## Approval
 

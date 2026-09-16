@@ -103,14 +103,17 @@ per-step contract, adding safety override on top rather than replacing it.
 - **Input:** none per call -- reads `get_pose()`, `proximity_values()` and the camera internally
   through the components it drives (`next_station`, `Navigator`, `identify_at_station`).
 - **Output:** none returned; drives `set_speed()` as a side effect (via the components above) and
-  exposes `self.state` (one of `PLAN`, `NAVIGATE`, `OBSERVE`, `IDENTIFY`, `GOTO_OBSERVE`, `STOP`,
-  `FAILED`) and `done()` (`True` once `STOP` or `FAILED`).
+  exposes `self.state` (one of `PLAN`, `NAVIGATE`, `OBSERVE`, `IDENTIFY`, `GOTO_OBSERVE`,
+  `FINAL_ALIGN`, `FINAL_HOLD`, `STOP`, `FAILED`) and `done()` (`True` once `STOP` or `FAILED`).
 - **Assumptions:** `MISSION["target"]` is read once at controller start-up (`target`, from
   `group_project_controller.py`'s module scope), never re-read mid-mission.
 - **Failure behaviour:** see `docs/architecture.md`'s state table -- every non-terminal state has a
-  named response to its component failing or returning nothing, and every failure path shrinks
-  `unvisited` and returns to `PLAN`, which cannot loop forever since `PLAN` on an empty `unvisited`
-  goes to `FAILED`.
+  named response to its component failing or returning nothing. `NAVIGATE` and `IDENTIFY` failures
+  shrink `unvisited` and return to `PLAN`, which cannot loop forever since `PLAN` on an empty
+  `unvisited` goes to `FAILED`. `GOTO_OBSERVE` and `FINAL_ALIGN` failures (Issue #17: can't close to
+  `ARRIVAL_TOLERANCE`, or can't align to `observe_yaw`, within the step budget) go straight to
+  `FAILED` instead, since the target is already confirmed by that point and there is no other
+  station left to retry.
 
 ### Telemetry
 

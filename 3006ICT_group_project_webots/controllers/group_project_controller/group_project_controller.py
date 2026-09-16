@@ -471,10 +471,14 @@ def identify_at_station(current_station_id):
 # ------------------------------------------------------------------
 # Mission state machine (Issue #16)
 #
-# PLAN -> NAVIGATE -> OBSERVE -> IDENTIFY -> GOTO_OBSERVE -> STOP
+# PLAN -> NAVIGATE -> OBSERVE -> IDENTIFY -> GOTO_OBSERVE -> FINAL_ALIGN -> FINAL_HOLD -> STOP
 #                         ^          |
 #                         '----------+---> PLAN (NO_MATCH, or component
 #                                           failure -- station marked visited)
+#
+# GOTO_OBSERVE/FINAL_ALIGN can also fall to FAILED if the final approach (Issue
+# #17) can't close within ARRIVAL_TOLERANCE or align to observe_yaw within its
+# step budget -- there's no other station to retry once the target is confirmed.
 #
 # See docs/architecture.md's state table for the full transition list and
 # every state's defined failure behaviour, and docs/interfaces.md for the
@@ -488,6 +492,14 @@ OBSERVE_YAW_TOLERANCE = 0.05    # rad; Navigator only reaches (x, y), so OBSERVE
 OBSERVE_TURN_SPEED = 2.0        # rad/s wheel speed while aligning to observe_yaw
 OBSERVE_YAW_STEP_BUDGET = int(os.environ.get("OBSERVE_YAW_STEP_BUDGET", "3000"))  # lower via env var to test the failure path
 NAVIGATE_STEP_BUDGET = int(os.environ.get("NAVIGATE_STEP_BUDGET", "3000"))  # ~96 s; lower via env var to test the failure path
+
+# Final stop rule (Issue #17): the literal success criterion is centre-within-
+# 0.20 m, stopped, no collision -- so ARRIVAL_TOLERANCE sits well inside that
+# with margin for pose noise and the settle, and the mission's own accept/
+# reject decision is this distance check, never a step-budget timeout.
+ARRIVAL_TOLERANCE = 0.10        # metres; half the 0.20 m requirement
+FINAL_HOLD_STEPS = 20           # consecutive zero-velocity steps required before the mission ends
+FINAL_ALIGN_STEP_BUDGET = int(os.environ.get("FINAL_ALIGN_STEP_BUDGET", "3000"))  # lower via env var to test the failure path
 
 
 class Mission:
@@ -504,6 +516,8 @@ class Mission:
         self.identify_frames = 0
         self.last_label = None
         self.consensus_count = 0
+        self.final_align_steps = 0
+        self.final_hold_steps = 0
         self._last_logged_state = None
 
     def done(self):
@@ -532,6 +546,10 @@ class Mission:
             self._identify()
         elif self.state == "GOTO_OBSERVE":
             self._goto_observe()
+        elif self.state == "FINAL_ALIGN":
+            self._final_align()
+        elif self.state == "FINAL_HOLD":
+            self._final_hold()
         else:  # STOP or FAILED: terminal, both end in the deliberate stop()
             stop()
 
@@ -613,13 +631,58 @@ class Mission:
 
     def _goto_observe(self):
         self._log(f"station={self.station['id']}")
+        # Close in on position, not on a timer: Navigator's own
+        # WAYPOINT_TOLERANCE (0.05 m) is already tighter than ARRIVAL_TOLERANCE,
+        # but the arrival decision here is the explicit distance check below,
+        # not nav.done() -- the step budget is only a stuck-robot safety net,
+        # never grounds for declaring the final position acceptable.
         self.nav.step()
         self.nav_steps += 1
-        if self.nav.done() or self.nav_steps >= NAVIGATE_STEP_BUDGET:
-            self.state = "STOP"
-            self._log(f"stopped at {self.station['id']}")
+        ox, oy = self.station["observe"]
+        if distance_to(ox, oy) <= ARRIVAL_TOLERANCE:
+            stop()  # position accepted -- FINAL_ALIGN only ever rotates from here, never translates
+            self._log(f"within {ARRIVAL_TOLERANCE} m of {self.station['id']} observe, aligning heading")
+            self.final_align_steps = 0
+            self.state = "FINAL_ALIGN"
+        elif self.nav_steps >= NAVIGATE_STEP_BUDGET:
+            self.state = "FAILED"
+            self._log(f"GOTO_OBSERVE failed to close within {ARRIVAL_TOLERANCE} m of {self.station['id']} within the step budget")
             stop()
-    stop()
+
+    def _final_align(self):
+        self._log(f"station={self.station['id']}")
+        _, _, yaw = get_pose()
+        yaw_error = normalise_angle(self.station["observe_yaw"] - yaw)
+        if abs(yaw_error) > OBSERVE_YAW_TOLERANCE:
+            self.final_align_steps += 1
+            if self.final_align_steps >= FINAL_ALIGN_STEP_BUDGET:
+                self.state = "FAILED"
+                self._log(f"FINAL_ALIGN failed to align heading at {self.station['id']} within the step budget")
+                stop()
+                return
+            rotate_in_place(OBSERVE_TURN_SPEED if yaw_error > 0 else -OBSERVE_TURN_SPEED)
+            return
+        stop()  # heading accepted -- FINAL_HOLD takes over zeroing velocity from here
+        self.final_hold_steps = 0
+        self.state = "FINAL_HOLD"
+
+    def _final_hold(self):
+        self._log(f"station={self.station['id']}")
+        stop()
+        self.final_hold_steps += 1
+        if self.final_hold_steps < FINAL_HOLD_STEPS:
+            return
+        ox, oy = self.station["observe"]
+        final_distance = distance_to(ox, oy)
+        _, _, yaw = get_pose()
+        final_heading_error = normalise_angle(self.station["observe_yaw"] - yaw)
+        print(
+            f"MISSION: FINAL STOP at {self.station['id']} pose={get_pose()} "
+            f"distance_to_observe={final_distance:.3f} m heading_error={final_heading_error:.3f} rad"
+        )
+        self.state = "STOP"
+        self._log(f"stopped at {self.station['id']}")
+        stop()
 
 
 # ------------------------------------------------------------------
