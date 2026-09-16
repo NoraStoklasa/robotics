@@ -44,6 +44,18 @@ already named in every supplied world — no extra wiring needed.
 Do not continue to implementation work until a baseline world runs cleanly: the first goal is a
 known-good Webots setup, not solving navigation.
 
+### Stubbing perception (Issue #29)
+
+To isolate a failure to navigation vs. vision, set an environment variable before launching Webots
+to force the identification step to a known answer instead of running the camera pipeline:
+
+```
+STUB_PERCEPTION=1 STUB_MATCH_STATION=S4   # claims a match at S4, NO_MATCH everywhere else
+```
+
+Leave `STUB_PERCEPTION` unset (or `0`) to use the real vision pipeline (Issue #8). This is a
+diagnostic flag, not a permanent mode — the controller runs the real components by default.
+
 ## Repository layout
 
 - `3006ICT_group_project_webots/` — supplied Webots project (worlds, controller, maps, config,

@@ -8,18 +8,21 @@ Mission:
 
 import json
 import math
+import os
 from collections import deque
 
 import cv2
 import numpy as np
 from controller import Robot
 
+import vision_utils
 from project_utils import (
     CONFIG,
     ROOT,
     apply_clearance_policy,
     astar,
     grid_to_world,
+    next_station,
     path_to_waypoints,
     simplify_path,
     world_to_grid,
@@ -423,6 +426,85 @@ class Navigator:
 
 
 # ------------------------------------------------------------------
+# End-to-end mission skeleton (Issue #29)
+#
+# The smallest loop that actually drives the whole mission: pick a station
+# by path cost, navigate to it with safety override, identify, stop if it
+# matches or move on if not. Issue #16 replaces this with the full state
+# machine (PLAN/NAVIGATE/OBSERVE/IDENTIFY/GOTO_OBSERVE/STOP/FAILED); this is
+# deliberately simpler, to prove every interface works end to end first.
+#
+# STUB_PERCEPTION is kept here permanently (not removed once verified, unlike
+# the ephemeral test harnesses used to validate Issues #11-#15) so perception
+# can be stubbed again later to isolate a failure, per this issue's own
+# acceptance criteria. Documented in README.txt.
+# ------------------------------------------------------------------
+STUB_PERCEPTION = os.environ.get("STUB_PERCEPTION", "0") == "1"
+STUB_MATCH_STATION = os.environ.get("STUB_MATCH_STATION", "S1")
+
+
+def stub_identify(current_station_id):
+    """Perception stub (Issue #29): claims a match at STUB_MATCH_STATION with
+    a fixed confidence, NO_MATCH everywhere else. Stands in for identify()'s
+    (label, confidence) output without touching the camera, so the mission
+    loop can be exercised independent of vision readiness.
+    """
+    if current_station_id == STUB_MATCH_STATION:
+        return target, 0.95
+    return vision_utils.NO_MATCH, 0.0
+
+
+def identify_at_station(current_station_id):
+    """Capture a frame and identify the target, or use the Issue #29 stub."""
+    if STUB_PERCEPTION:
+        return stub_identify(current_station_id)
+    image = camera_bgr()
+    crop_box = vision_utils.find_poster_region(image)
+    if crop_box is None:
+        return vision_utils.NO_MATCH, 0.0
+    x, y, w, h = crop_box
+    return vision_utils.identify(image[y:y + h, x:x + w])
+
+
+def run_mission_skeleton():
+    """Issue #29: start -> pick a station -> navigate -> identify -> stop or continue."""
+    robot.step(timestep)  # GPS/IMU need one step before they report real values
+    print(f"SKELETON: target = {target}")
+    if STUB_PERCEPTION:
+        print(f"SKELETON: STUB_PERCEPTION on, claiming a match at {STUB_MATCH_STATION}")
+
+    total_steps = 0
+    unvisited = list(CONFIG["stations"])
+    while unvisited:
+        pose = get_pose()
+        station = next_station(pose, unvisited, PLANNING_GRID)
+        print(f"SKELETON: state=PLAN chosen={station['id']} pose=({pose[0]:.2f}, {pose[1]:.2f})")
+
+        print(f"SKELETON: state=NAVIGATE target_observe={station['observe']}")
+        nav = Navigator(*station["observe"])
+        while robot.step(timestep) != -1:
+            total_steps += 1
+            nav.step()
+            if nav.done():
+                break
+
+        label, confidence = identify_at_station(station["id"])
+        print(f"SKELETON: state=IDENTIFY station={station['id']} label={label} confidence={confidence:.2f}")
+
+        if label == target:
+            elapsed = total_steps * timestep / 1000.0
+            print(f"SKELETON: state=STOP matched target '{target}' at {station['id']} (elapsed {elapsed:.1f}s)")
+            stop()
+            return
+
+        unvisited = [s for s in unvisited if s["id"] != station["id"]]
+
+    elapsed = total_steps * timestep / 1000.0
+    print(f"SKELETON: state=FAILED no station matched target '{target}' (elapsed {elapsed:.1f}s)")
+    stop()
+
+
+# ------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------
 def main():
@@ -433,15 +515,7 @@ def main():
     print("Camera:", camera.getWidth(), "x", camera.getHeight())
     print("Basic timestep:", timestep)
 
-    printed_pose = False
-    while robot.step(timestep) != -1:
-        pose = get_pose()
-        if not printed_pose:
-            print("Start pose (x, y, yaw):", pose)
-            printed_pose = True
-        # TO DO
-
-        stop()
+    run_mission_skeleton()
 
 
 if __name__ == "__main__":

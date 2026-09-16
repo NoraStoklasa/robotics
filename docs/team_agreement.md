@@ -18,6 +18,24 @@ Confirm here once both members have reviewed and approved it, with the date:
 
 - [ ] Architecture approved by both members on: ____
 
+## First end-to-end run
+
+Per issue [29](.github/issues/29-early-end-to-end-skeleton.md) and the Week 8 workshop's "integrate
+early" advice.
+
+- **Date:** 2026-09-16
+- **What ran:** `run_mission_skeleton()` in `group_project_controller.py` — start at world A, pick a
+  station by path cost (Issue #15), navigate with safety override (Issue #14), identify (real vision,
+  Issue #8, or the `STUB_PERCEPTION` stub), stop on a match or continue, `FAILED` if all 8 come back
+  `NO_MATCH`.
+- **Result:** ran clean from start to a full stop with the perception stub, from start to `FAILED`
+  with the stub set to never match (all 8 stations visited, 173.8 s elapsed — 66.2 s under the 240 s
+  budget), and once with real (non-stubbed) vision end to end (correctly identified `running_shoe`/S6,
+  `camera`/S5, `headphones`/S7; missed `soda_can`/S1 — consistent with the 7/8 accuracy already
+  recorded in `docs/vision_evaluation.md`, not a new defect).
+- **Stub swap proven:** changing only `STUB_MATCH_STATION` from `S8` to `S4` (an environment variable,
+  no code change) changed which station the robot stopped at, exactly as required.
+
 ## Interfaces between components
 
 Confirm here once settled in `docs/interfaces.md` (issue 26):
