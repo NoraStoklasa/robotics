@@ -26,13 +26,13 @@ Tasks:
 - Cross-check the physical margin: cells are 0.10 m and the e-puck is far smaller, so a one-cell gap is physically passable but demands accurate heading control.
 
 ## Acceptance criteria
-- [ ] `python tools/check_reachability.py` prints a start-by-station reachability table for a chosen policy and exits non-zero if any of the 24 start/station pairs is unreachable.
-- [ ] The three findings above are reproduced and recorded, including which stations are lost under uniform inflation.
-- [ ] The chosen policy passes all 24 start/station pairs.
-- [ ] `docs/decision_clearance.md` states the policy, the evidence, and the accepted risk.
-- [ ] The policy is implemented as one function taking the raw grid and returning the planning grid, so it can be swapped without touching A*.
+- [x] `python tools/check_reachability.py` prints a start-by-station reachability table for a chosen policy and exits non-zero if any of the 24 start/station pairs is unreachable.
+- [x] The three findings above are reproduced and recorded, including which stations are lost under uniform inflation.
+- [x] The chosen policy passes all 24 start/station pairs.
+- [x] `docs/decision_clearance.md` states the policy, the evidence, and the accepted risk.
+- [x] The policy is implemented as one function taking the raw grid and returning the planning grid, so it can be swapped without touching A*.
 
-- [ ] The chosen policy is recorded as a row in `docs/decision_log.md` with the reachability numbers that decided it.
+- [x] The chosen policy is recorded as a row in `docs/decision_log.md` with the reachability numbers that decided it.
 
 ## Evidence for the report
 The reachability table under each policy and a figure of the inflated grid with the sealed interior pocket — a strong design-rationale exhibit showing a real constraint discovered by analysis.
