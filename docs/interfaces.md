@@ -117,7 +117,26 @@ per-step contract, adding safety override on top rather than replacing it.
 
 ### Telemetry
 
-- **Input:**
-- **Output:**
-- **Assumptions:**
-- **Failure behaviour:**
+**Signature:** `class TelemetryLogger:` (`telemetry.py`) with `log_step(**fields)` (interval row) and
+`log_summary(**fields)` (one row per run); `Mission` owns one instance and calls both.
+
+- **Input:** `Mission` passes `sim_time` (from `robot.getTime()`, never wall-clock), `state`, pose,
+  current station id, identification label/confidence, `Navigator`'s active behaviour and the max
+  proximity reading to `log_step()` every `TELEMETRY_LOG_INTERVAL_STEPS` control steps (not every
+  step, per Issue #18's "keep logging cheap" scope); it passes start id, target, final station,
+  final distance, completion time and outcome to `log_summary()` exactly once, when `Mission.done()`
+  first becomes `True`.
+- **Output:** one interval CSV per run under `runs/` (gitignored), and one appended row per run in
+  the committed `docs/data/mission_summary.csv` -- the source table for the report's completion-time
+  figures.
+- **Assumptions:** `TELEMETRY_ENABLED` (env var, default on) gates both files; when off, `log_step()`
+  and `log_summary()` are no-ops so the rest of `Mission` doesn't need its own on/off branching.
+  Interval rows are written and flushed as they're logged, not buffered, so a run stopped mid-mission
+  (e.g. pressing Webots' Stop) still leaves a usable partial interval CSV.
+- **Failure behaviour:** `TIME_BUDGET` (240 s, the assessment's 4:00 limit) is checked every step
+  from `Mission.step()` regardless of the current state; exceeding it forces `FAILED` with outcome
+  `TIMEOUT`. `BUDGET_WARN_FRACTIONS` (50/75/90%) each print one warning, once. Past
+  `DEGRADED_MODE_FRACTION` (90%) of the budget, if `PLAN` holds a target sighting confident enough to
+  count as a candidate (`DEGRADED_MIN_CONFIDENCE`) but never confirmed by full IDENTIFY consensus, it
+  commits straight to that station's `observe` instead of continuing to inspect remaining stations --
+  trading a full search for a plausible answer rather than risking `TIMEOUT` with nothing to show.

@@ -22,11 +22,13 @@ from project_utils import (
     apply_clearance_policy,
     astar,
     grid_to_world,
+    nearest_start_id,
     next_station,
     path_to_waypoints,
     simplify_path,
     world_to_grid,
 )
+from telemetry import TelemetryLogger
 
 
 # ------------------------------------------------------------------
@@ -480,6 +482,13 @@ def identify_at_station(current_station_id):
 # #17) can't close within ARRIVAL_TOLERANCE or align to observe_yaw within its
 # step budget -- there's no other station to retry once the target is confirmed.
 #
+# Issue #18 adds two things that cut across every state rather than living in
+# one: TIME_BUDGET forces FAILED (outcome "TIMEOUT") from any non-terminal
+# state once exceeded, and PLAN short-circuits straight to GOTO_OBSERVE with
+# the best unconfirmed target sighting so far once DEGRADED_MODE_FRACTION of
+# the budget is spent, instead of continuing PLAN -> NAVIGATE -> OBSERVE ->
+# IDENTIFY over the remaining unvisited stations.
+#
 # See docs/architecture.md's state table for the full transition list and
 # every state's defined failure behaviour, and docs/interfaces.md for the
 # component signatures this drives. Replaces Issue #29's simpler skeleton
@@ -501,11 +510,26 @@ ARRIVAL_TOLERANCE = 0.10        # metres; half the 0.20 m requirement
 FINAL_HOLD_STEPS = 20           # consecutive zero-velocity steps required before the mission ends
 FINAL_ALIGN_STEP_BUDGET = int(os.environ.get("FINAL_ALIGN_STEP_BUDGET", "3000"))  # lower via env var to test the failure path
 
+# Telemetry and the 4:00 time budget (Issue #18).
+TELEMETRY_ENABLED = os.environ.get("TELEMETRY_ENABLED", "1") == "1"       # off to measure logging overhead
+TELEMETRY_LOG_INTERVAL_STEPS = 10   # ~0.32 s; log at an interval, not every timestep, to keep the loop cheap
+TIME_BUDGET = float(os.environ.get("TIME_BUDGET", "240"))                 # seconds; the assessment's 4:00 mission budget
+BUDGET_WARN_FRACTIONS = (0.50, 0.75, 0.90)
+# Degraded mode: past this much of the budget, stop inspecting further stations
+# and commit to the best target-matching evidence seen so far, if any exists.
+# DEGRADED_MIN_CONFIDENCE sits above the ~0.0-0.5 confidence real NO_MATCH/wrong-
+# label frames produce (see docs/target_identification.md), so only a real,
+# if unconfirmed, sighting of the target counts as a candidate worth acting on.
+DEGRADED_MODE_FRACTION = 0.90
+DEGRADED_MIN_CONFIDENCE = 0.60
+RUNS_DIR = ROOT / "runs"
+MISSION_SUMMARY_PATH = ROOT.parent / "docs" / "data" / "mission_summary.csv"
+
 
 class Mission:
     """Drives the whole mission. Call step() once per robot.step(timestep)."""
 
-    def __init__(self):
+    def __init__(self, telemetry=None):
         self.state = "PLAN"
         self.unvisited = list(CONFIG["stations"])
         self.station = None
@@ -515,10 +539,23 @@ class Mission:
         self.yaw_align_steps = 0
         self.identify_frames = 0
         self.last_label = None
+        self.last_confidence = 0.0
         self.consensus_count = 0
         self.final_align_steps = 0
         self.final_hold_steps = 0
+        self.final_distance = None
+        self.final_heading_error = None
         self._last_logged_state = None
+
+        # Issue #18: telemetry, the 4:00 budget, and the degraded-mode fallback.
+        self.telemetry = telemetry
+        self.start_id = nearest_start_id(get_pose())
+        self.mission_start_time = robot.getTime()
+        self.telemetry_step_count = 0
+        self.budget_fractions_warned = set()
+        self.best_candidate = None  # {"station": station_dict, "confidence": float}
+        self.outcome = None         # set to "TIMEOUT" only; otherwise inferred from self.state
+        self._finished = False
 
     def done(self):
         return self.state in ("STOP", "FAILED")
@@ -535,7 +572,96 @@ class Mission:
         self.unvisited = [s for s in self.unvisited if s["id"] != self.station["id"]]
         self.state = "PLAN"
 
+    def _elapsed_time(self):
+        return robot.getTime() - self.mission_start_time
+
+    def _check_time_budget(self):
+        fraction = self._elapsed_time() / TIME_BUDGET
+        for warn_fraction in BUDGET_WARN_FRACTIONS:
+            if fraction >= warn_fraction and warn_fraction not in self.budget_fractions_warned:
+                self.budget_fractions_warned.add(warn_fraction)
+                print(
+                    f"MISSION: TIME BUDGET {warn_fraction * 100:.0f}% consumed "
+                    f"({self._elapsed_time():.1f}s / {TIME_BUDGET:.0f}s)"
+                )
+        if fraction >= 1.0 and not self.done():
+            self.outcome = "TIMEOUT"
+            self.state = "FAILED"
+            self._log(f"TIME_BUDGET of {TIME_BUDGET:.0f}s exceeded")
+            stop()
+
+    def _check_degraded_mode(self):
+        # Issue #18 degraded mode: cross-cutting like the budget check above,
+        # not just a PLAN-time decision -- a station chosen before the 90%
+        # mark can still be mid-NAVIGATE/OBSERVE/IDENTIFY when the mark is
+        # crossed, and waiting for that visit to finish naturally could burn
+        # the rest of the budget on the wrong station. GOTO_OBSERVE onward is
+        # excluded because that means the real target is already confirmed
+        # and committed to -- nothing left to preempt.
+        if self.state in ("GOTO_OBSERVE", "FINAL_ALIGN", "FINAL_HOLD", "STOP", "FAILED"):
+            return
+        if self.best_candidate is None:
+            return
+        if self._elapsed_time() / TIME_BUDGET < DEGRADED_MODE_FRACTION:
+            return
+        self.station = self.best_candidate["station"]
+        self._log(
+            f"DEGRADED MODE: budget {self._elapsed_time():.0f}s/{TIME_BUDGET:.0f}s consumed, "
+            f"committing to {self.station['id']} (confidence={self.best_candidate['confidence']:.2f}) "
+            "instead of continuing the current station visit or inspecting others"
+        )
+        self.nav = Navigator(*self.station["observe"])
+        self.nav_steps = 0
+        self.state = "GOTO_OBSERVE"
+
+    def _note_candidate(self, label, confidence):
+        # Issue #18 degraded mode's evidence: any real (non-consensus-confirmed)
+        # sighting of the target, kept even after the station is marked visited.
+        if label != target or confidence < DEGRADED_MIN_CONFIDENCE:
+            return
+        if self.best_candidate is None or confidence > self.best_candidate["confidence"]:
+            self.best_candidate = {"station": self.station, "confidence": confidence}
+
+    def _log_telemetry_row(self):
+        if self.telemetry is None or not self.telemetry.enabled:
+            return
+        self.telemetry_step_count += 1
+        if self.telemetry_step_count % TELEMETRY_LOG_INTERVAL_STEPS != 0:
+            return
+        x, y, yaw = get_pose()
+        behaviour = self.nav.last_behaviour if self.nav is not None else ""
+        self.telemetry.log_step(
+            sim_time=round(self._elapsed_time(), 3),
+            state=self.state,
+            x=round(x, 3),
+            y=round(y, 3),
+            yaw=round(yaw, 3),
+            station=self.station["id"] if self.station else "",
+            label=self.last_label or "",
+            confidence=round(self.last_confidence, 3),
+            behaviour=behaviour or "",
+            max_proximity=round(max(proximity_values()), 1),
+        )
+
+    def _finish(self):
+        if self._finished:
+            return
+        self._finished = True
+        outcome = self.outcome or ("SUCCESS" if self.state == "STOP" else "FAILED")
+        if self.telemetry is not None:
+            self.telemetry.log_summary(
+                start_id=self.start_id,
+                target=target,
+                station=self.station["id"] if self.station else "",
+                final_distance=f"{self.final_distance:.3f}" if self.final_distance is not None else "",
+                completion_time=f"{self._elapsed_time():.2f}",
+                outcome=outcome,
+            )
+
     def step(self):
+        self._check_time_budget()
+        self._check_degraded_mode()
+        self._log_telemetry_row()
         if self.state == "PLAN":
             self._plan()
         elif self.state == "NAVIGATE":
@@ -552,6 +678,8 @@ class Mission:
             self._final_hold()
         else:  # STOP or FAILED: terminal, both end in the deliberate stop()
             stop()
+        if self.done():
+            self._finish()
 
     def _plan(self):
         if not self.unvisited:
@@ -606,6 +734,8 @@ class Mission:
         self._log(f"station={self.station['id']}")
         label, confidence = identify_at_station(self.station["id"])
         self.identify_frames += 1
+        self.last_confidence = confidence
+        self._note_candidate(label, confidence)
 
         if label != vision_utils.NO_MATCH and label == self.last_label:
             self.consensus_count += 1
@@ -673,12 +803,12 @@ class Mission:
         if self.final_hold_steps < FINAL_HOLD_STEPS:
             return
         ox, oy = self.station["observe"]
-        final_distance = distance_to(ox, oy)
+        self.final_distance = distance_to(ox, oy)
         _, _, yaw = get_pose()
-        final_heading_error = normalise_angle(self.station["observe_yaw"] - yaw)
+        self.final_heading_error = normalise_angle(self.station["observe_yaw"] - yaw)
         print(
             f"MISSION: FINAL STOP at {self.station['id']} pose={get_pose()} "
-            f"distance_to_observe={final_distance:.3f} m heading_error={final_heading_error:.3f} rad"
+            f"distance_to_observe={self.final_distance:.3f} m heading_error={self.final_heading_error:.3f} rad"
         )
         self.state = "STOP"
         self._log(f"stopped at {self.station['id']}")
@@ -700,7 +830,8 @@ def main():
     if STUB_PERCEPTION:
         print(f"MISSION: STUB_PERCEPTION on, claiming a match at {STUB_MATCH_STATION}")
 
-    mission = Mission()
+    telemetry = TelemetryLogger(RUNS_DIR, MISSION_SUMMARY_PATH, enabled=TELEMETRY_ENABLED)
+    mission = Mission(telemetry=telemetry)
     while robot.step(timestep) != -1:
         mission.step()
         if mission.done():

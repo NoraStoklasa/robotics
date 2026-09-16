@@ -56,6 +56,22 @@ STUB_PERCEPTION=1 STUB_MATCH_STATION=S4   # claims a match at S4, NO_MATCH every
 Leave `STUB_PERCEPTION` unset (or `0`) to use the real vision pipeline (Issue #8). This is a
 diagnostic flag, not a permanent mode — the controller runs the real components by default.
 
+### Telemetry and the mission time budget (Issue #18)
+
+Every run writes an interval-sampled CSV under `runs/` (gitignored) and appends one summary row
+(start, target, station, final distance, completion time, outcome) to the committed
+`docs/data/mission_summary.csv`. Useful environment variables:
+
+```
+TELEMETRY_ENABLED=0   # skip both CSVs, e.g. to measure logging overhead against a normal run
+TIME_BUDGET=60         # seconds; lower the 4:00 (240 s) budget to test warnings/timeout/degraded mode
+```
+
+Past `TIME_BUDGET`, the mission fails with outcome `TIMEOUT`. Past 90% of the budget, if a
+target sighting was seen but never confirmed (station skipped after `IDENTIFY_MAX_FRAMES` with no
+3-frame consensus), the mission commits straight to that station's `observe` instead of continuing
+to inspect the remaining stations.
+
 ## Repository layout
 
 - `3006ICT_group_project_webots/` — supplied Webots project (worlds, controller, maps, config,

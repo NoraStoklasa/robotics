@@ -34,6 +34,20 @@ def start_by_id(start_id):
     return next(s for s in CONFIG["starts"] if s["id"] == start_id)
 
 
+def nearest_start_id(pose):
+    """Which configured start (x, y) the robot's first real pose is closest to.
+
+    The controller itself never gets told which world/start it's running in --
+    this is only for labelling the Issue #18 telemetry summary row, matched
+    against CONFIG["starts"] the same way Issue #2's device baseline did.
+    """
+    x, y, _ = pose
+    return min(
+        CONFIG["starts"],
+        key=lambda s: (s["pose"][0] - x) ** 2 + (s["pose"][1] - y) ** 2,
+    )["id"]
+
+
 def inflate_grid(grid):
     """Return a copy of grid with every obstacle's 4-connected free neighbours also marked obstacle."""
     inflated = grid.copy()

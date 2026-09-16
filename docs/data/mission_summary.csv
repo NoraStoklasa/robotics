@@ -1,0 +1,9 @@
+run_timestamp,start_id,target,station,final_distance,completion_time,outcome
+,A,soda_can,S1,0.043,144.58,SUCCESS
+,B,soda_can,S1,0.043,169.92,SUCCESS
+,C,soda_can,S1,,191.94,FAILED
+20260916T031055Z,A,soda_can,S3,,100.00,TIMEOUT
+20260916T031553Z,A,soda_can,S3,,100.00,TIMEOUT
+20260916T031945Z,A,soda_can,S1,,100.00,TIMEOUT
+20260916T032432Z,A,soda_can,S5,0.088,96.74,SUCCESS
+20260916T033006Z,A,soda_can,S1,0.043,144.58,SUCCESS
