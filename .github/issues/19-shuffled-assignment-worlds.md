@@ -27,11 +27,11 @@ Tasks:
 - Run the full controller against these worlds and confirm it finds the target at its new station.
 
 ## Acceptance criteria
-- [ ] At least three shuffled worlds exist under `test_worlds/`, and at least one is a full derangement.
-- [ ] `diff` between `worlds/` and the original supplied package shows no change to the official worlds.
-- [ ] For each shuffled world, the controller stops within 0.20 m of the correct `observe` position for at least three different mission targets, with no code change between runs.
-- [ ] At least one run uses a target whose station differs from its training-world station, and the robot still succeeds.
-- [ ] `docs/shuffled_worlds.md` tabulates every permutation and the observed result.
+- [x] At least three shuffled worlds exist under `test_worlds/`, and at least one is a full derangement. (All three -- `test_start_A/B/C.wbt` -- are full derangements: cyclic shift, reversal, and adjacent-pair swap respectively; no station keeps its training-world target in any of them.)
+- [x] `diff` between `worlds/` and the original supplied package shows no change to the official worlds. (Only the 8 `textureUrl` lines differ per copy; every translation, rotation and station name matches the source training world.)
+- [ ] For each shuffled world, the controller stops within 0.20 m of the correct `observe` position for at least three different mission targets, with no code change between runs. **Not fully met** -- 3 of 8 real Webots runs passed (2 in world A, 1 in world B, 0 in world C so far), all well within tolerance (0.010-0.068 m). The 5 failures were traced to `IDENTIFY`'s confidence/consensus threshold at specific target/station/world combinations never exercised before the shuffle existed (e.g. `wall_clock` never classifies confidently even at S1, the best-characterised station in the project; world C's approach into S2 gave `soda_can` only 0.25-0.26 confidence versus a clean pass in A/B) -- not a shuffling bug. See `docs/shuffled_worlds.md` and the 2026-09-16 rows in `docs/failure_log.md`; handed to issue 21 rather than fixed here, since this issue is scoped to building/evaluating the worlds, not to `IDENTIFY`.
+- [x] At least one run uses a target whose station differs from its training-world station, and the robot still succeeds. (`soda_can` moved from S1 to S2 in world A, and separately from S1 to S8 in world B; both real runs reached `FINAL STOP` there, 0.068 m and 0.010 m from `observe`.)
+- [x] `docs/shuffled_worlds.md` tabulates every permutation and the observed result.
 
 ## Evidence for the report
 The shuffled-world results table — the strongest single piece of evidence that identification is genuinely visual and no fixed mapping is relied on.
