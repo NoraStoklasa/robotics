@@ -673,10 +673,13 @@ identify.last_result = {
 identify.last_scores = {}
 
 
+_IDENTIFY_MAX_RANKED_CANDIDATES = 3  # see identify_frame
+
+
 def identify_frame(image: np.ndarray) -> tuple[str, float]:
     """Run `find_poster_region()` then `identify()`, trying more than one
-    interpretation of where the poster is on the barrier when they disagree,
-    instead of committing to the single geometric projection.
+    interpretation of where the poster is when they disagree, instead of
+    committing to the single top-ranked geometric projection.
 
     Found on real live `headphones` (S7) frames: the precise projection
     (`_POSTER_WIDTH_FRAC`/`_POSTER_HEIGHT_FRAC` of the detected barrier) can
@@ -688,29 +691,44 @@ def identify_frame(image: np.ndarray) -> tuple[str, float]:
     (`running_shoe`/`backpack` at 0.38-0.41 on the narrow crop) came back
     correctly as `headphones` at 0.77 on the full barrier box.
 
+    Also found, on a real `soda_can` frame (`C_S1_d1p000_hp10.png`, long
+    range + off-axis): `find_poster_region`'s own top-ranked candidate can
+    itself be the wrong one. There, a half-window search (see
+    `_all_barrier_candidates`) merged a strip of sky above the barrier into
+    its "barrier" at a wide value band, and the resulting poster projection
+    -- centred on empty plain panel, not the can -- happened to score very
+    slightly *more* square than the correct candidate (still present, ranked
+    second) and won `find_poster_region`'s aspect-closeness tie-break by a
+    hair. Tried several geometric signals to catch this at detection time
+    (internal value range of the barrier region, top-row brightness) -- none
+    separated it from legitimate candidates on real data, the same dead end
+    hit while chasing the `headphones` case. Trying the top
+    `_IDENTIFY_MAX_RANKED_CANDIDATES` ranked candidates (not just the first)
+    through `identify()` and keeping whichever it actually accepts covers
+    this case the same way: the sky-merged candidate has no real poster
+    content so the classifier does not confidently accept it, and the
+    correct, second-ranked candidate wins instead.
+
     Tried replacing the narrow projection outright: rejected -- it is what
     `docs/find_poster_region.md`'s hand-labelled IoU test verifies against
-    real ground truth (19/20 required frames), and the other 7 targets rely
-    on it staying tight for a clean square crop; a blanket geometric rule
-    for "when to widen" (centroid-of-darkness, then a brightness-notch
-    detector) was tried and rejected too -- both failed to separate this
-    failure from ordinary working frames on real data (the notch detector
-    scored an *accepted*, high-confidence real `headphones` frame the same
-    as the live failures). Trying both projections and keeping whichever
-    `identify()` actually accepts gets the benefit without weakening the
-    already-verified tight crop: if neither is accepted the narrow crop's
+    real ground truth, and the other targets rely on it staying tight for a
+    clean square crop. If nothing is accepted, the top-ranked candidate's
     own (rejected) result is kept, unchanged from calling `identify()`
-    directly."""
+    directly on it."""
     crop_box = find_poster_region(image)
     if crop_box is None:
         return identify(None)
-    x, y, w, h = crop_box
-    boxes = [(x, y, w, h)]
-    candidates = find_poster_region.last_candidates
-    if candidates:
-        wide = candidates[0]["from_barrier"]
-        if wide != (x, y, w, h):
-            boxes.append(wide)
+    boxes = []
+    seen_poster_boxes = set()
+    for c in find_poster_region.last_candidates:
+        if c["box"] in seen_poster_boxes:
+            continue  # near-duplicate of an already-ranked candidate (same box found at another band/anchor)
+        seen_poster_boxes.add(c["box"])
+        if len(seen_poster_boxes) > _IDENTIFY_MAX_RANKED_CANDIDATES:
+            break
+        for box in (c["box"], c["from_barrier"]):
+            if box not in boxes:
+                boxes.append(box)
     attempts = []
     for bx, by, bw, bh in boxes:
         label, confidence = identify(image[by:by + bh, bx:bx + bw])

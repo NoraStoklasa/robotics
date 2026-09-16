@@ -18,8 +18,8 @@ head predicts a class, the crop must still look enough like that class's supplie
 
 - Valid outputs across station and distractor rows: 120/120.
 - Distractor false-accepts at the shipped threshold: 1/20.
-- Combined best captured station crop accuracy: 8/8.
-- `NO_MATCH` rate over all evaluated rows: 0.408.
+- Combined best captured station crop accuracy: 7/8.
+- `NO_MATCH` rate over all evaluated rows: 0.342.
 - Threshold sweep values tested: 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80.
 
 ## Per-World Station Coverage
@@ -32,15 +32,15 @@ another world.
 |---|---|---:|---|
 | A | `S1`, `S2`, `S3`, `S4`, `S5`, `S6`, `S7`, `S8` | 8/8 |  |
 | B | `S1`, `S2`, `S3`, `S4`, `S5`, `S6`, `S7`, `S8` | 8/8 |  |
-| C | `S1`, `S2`, `S3`, `S4`, `S5`, `S6`, `S7`, `S8` | 7/8 |  |
+| C | `S1`, `S2`, `S3`, `S4`, `S5`, `S6`, `S7`, `S8` | 6/8 |  |
 
 ## Best Crop Per Station
 
 | Station | Truth | Returned | Confidence | Margin | Reference similarity | Frame |
 |---|---|---|---:|---:|---:|---|
-| `S1` | `soda_can` | `soda_can` | 0.858 | 0.807 | 0.200 | `C_S1_d0p450_hm10.png` |
+| `S1` | `soda_can` | `soda_can` | 0.918 | 0.889 | 0.264 | `C_S1_d0p450_hp00.png` |
 | `S2` | `coffee_mug` | `coffee_mug` | 0.958 | 0.943 | 0.319 | `A_S2_d0p800_hp10.png` |
-| `S3` | `backpack` | `backpack` | 0.621 | 0.463 | 0.216 | `B_S3_d0p800_hm10_issue9.png` |
+| `S3` | `backpack` | `camera` | 0.815 | 0.732 | 0.015 | `C_S3_d1p000_hm10.png` |
 | `S4` | `fire_extinguisher` | `fire_extinguisher` | 0.931 | 0.917 | 0.070 | `B_S4_d0p295_hp00.png` |
 | `S5` | `camera` | `camera` | 0.987 | 0.983 | 0.006 | `B_S5_d0p450_hm10.png` |
 | `S6` | `running_shoe` | `running_shoe` | 0.988 | 0.985 | 0.652 | `B_S6_d0p800_hm10.png` |
@@ -56,7 +56,7 @@ CSV: `docs/data/vision_confusion_matrix.csv`
 ## Threshold Sweep
 
 At the shipped point (0.50), the best-station true-accept rate is
-1.000 and the distractor false-accept
+0.875 and the distractor false-accept
 rate is 0.050.
 
 ![threshold sweep](data/vision_threshold_sweep.png)
@@ -65,14 +65,14 @@ rate is 0.050.
 
 | Label | TP | FP | FN | Precision | Recall |
 |---|---:|---:|---:|---:|---:|
-| `soda_can` | 8 | 0 | 6 | 1.000 | 0.571 |
+| `soda_can` | 13 | 0 | 1 | 1.000 | 0.929 |
 | `coffee_mug` | 7 | 0 | 7 | 1.000 | 0.500 |
-| `backpack` | 5 | 0 | 9 | 1.000 | 0.357 |
+| `backpack` | 6 | 0 | 8 | 1.000 | 0.429 |
 | `fire_extinguisher` | 5 | 1 | 3 | 0.833 | 0.625 |
 | `camera` | 11 | 3 | 0 | 0.786 | 1.000 |
 | `running_shoe` | 13 | 1 | 1 | 0.929 | 0.929 |
 | `headphones` | 7 | 1 | 4 | 0.875 | 0.636 |
-| `wall_clock` | 9 | 0 | 5 | 1.000 | 0.643 |
+| `wall_clock` | 11 | 0 | 3 | 1.000 | 0.786 |
 
 ## Distractor Rejection
 
@@ -103,8 +103,11 @@ All 20 distractor textures returned `NO_MATCH`; full table: `docs/data/vision_di
 
 ## Known Failure Condition
 
-No best-station miss remained in this run. Low-resolution, clipped station crops are
-still the expected failure mode because the poster occupies very few pixels.
+`C_S3_d1p000_hm10.png` is the clearest remaining miss: it is station
+`S3` / `backpack`, but the best crop still returns
+`camera` with confidence 0.815. The frame is a
+hard, boxed-in station view; the target crop is small/clipped enough that the classifier
+does not produce a confident target result.
 
 ## Output Files
 

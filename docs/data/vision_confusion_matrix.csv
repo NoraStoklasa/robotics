@@ -1,10 +1,10 @@
 truth\predicted,soda_can,coffee_mug,backpack,fire_extinguisher,camera,running_shoe,headphones,wall_clock,NO_MATCH
-soda_can,8,0,0,0,2,0,0,0,4
+soda_can,13,0,0,0,1,0,0,0,0
 coffee_mug,0,7,0,0,0,1,0,0,6
-backpack,0,0,5,0,1,0,0,0,8
+backpack,0,0,6,0,2,0,0,0,6
 fire_extinguisher,0,0,0,5,0,0,0,0,3
 camera,0,0,0,0,11,0,0,0,0
 running_shoe,0,0,0,0,0,13,0,0,1
 headphones,0,0,0,0,0,0,7,0,4
-wall_clock,0,0,0,0,0,0,1,9,4
+wall_clock,0,0,0,0,0,0,1,11,2
 DISTRACTOR,0,0,0,1,0,0,0,0,19
