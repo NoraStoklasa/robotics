@@ -426,21 +426,19 @@ class Navigator:
 
 
 # ------------------------------------------------------------------
-# End-to-end mission skeleton (Issue #29)
-#
-# The smallest loop that actually drives the whole mission: pick a station
-# by path cost, navigate to it with safety override, identify, stop if it
-# matches or move on if not. Issue #16 replaces this with the full state
-# machine (PLAN/NAVIGATE/OBSERVE/IDENTIFY/GOTO_OBSERVE/STOP/FAILED); this is
-# deliberately simpler, to prove every interface works end to end first.
-#
-# STUB_PERCEPTION is kept here permanently (not removed once verified, unlike
-# the ephemeral test harnesses used to validate Issues #11-#15) so perception
-# can be stubbed again later to isolate a failure, per this issue's own
-# acceptance criteria. Documented in README.txt.
+# Perception (Issue #29 stub, kept permanently -- not removed once verified,
+# unlike the ephemeral test harnesses used to validate Issues #11-#15 -- so
+# any component can be stubbed again later to isolate a failure). Default
+# off, since the real identify() (Issue #8) is available. Documented in
+# README.md.
 # ------------------------------------------------------------------
 STUB_PERCEPTION = os.environ.get("STUB_PERCEPTION", "0") == "1"
 STUB_MATCH_STATION = os.environ.get("STUB_MATCH_STATION", "S1")
+# Issue #16 testing only: make the stub disagree on exactly one frame at the
+# matching station, to demonstrate a single bad frame being rejected by the
+# consensus requirement without derailing the mission. 0 = never disagree.
+STUB_NOISE_FRAME = int(os.environ.get("STUB_NOISE_FRAME", "0"))
+_stub_call_count = {}
 
 
 def stub_identify(current_station_id):
@@ -449,9 +447,13 @@ def stub_identify(current_station_id):
     (label, confidence) output without touching the camera, so the mission
     loop can be exercised independent of vision readiness.
     """
-    if current_station_id == STUB_MATCH_STATION:
-        return target, 0.95
-    return vision_utils.NO_MATCH, 0.0
+    if current_station_id != STUB_MATCH_STATION:
+        return vision_utils.NO_MATCH, 0.0
+
+    _stub_call_count[current_station_id] = _stub_call_count.get(current_station_id, 0) + 1
+    if _stub_call_count[current_station_id] == STUB_NOISE_FRAME:
+        return "headphones" if target != "headphones" else "camera", 0.80  # deliberate disagreeing frame
+    return target, 0.95
 
 
 def identify_at_station(current_station_id):
@@ -466,41 +468,157 @@ def identify_at_station(current_station_id):
     return vision_utils.identify(image[y:y + h, x:x + w])
 
 
-def run_mission_skeleton():
-    """Issue #29: start -> pick a station -> navigate -> identify -> stop or continue."""
-    robot.step(timestep)  # GPS/IMU need one step before they report real values
-    print(f"SKELETON: target = {target}")
-    if STUB_PERCEPTION:
-        print(f"SKELETON: STUB_PERCEPTION on, claiming a match at {STUB_MATCH_STATION}")
+# ------------------------------------------------------------------
+# Mission state machine (Issue #16)
+#
+# PLAN -> NAVIGATE -> OBSERVE -> IDENTIFY -> GOTO_OBSERVE -> STOP
+#                         ^          |
+#                         '----------+---> PLAN (NO_MATCH, or component
+#                                           failure -- station marked visited)
+#
+# See docs/architecture.md's state table for the full transition list and
+# every state's defined failure behaviour, and docs/interfaces.md for the
+# component signatures this drives. Replaces Issue #29's simpler skeleton
+# with the real components against an interface that skeleton already proved.
+# ------------------------------------------------------------------
+IDENTIFY_CONSENSUS_FRAMES = 3   # consecutive agreeing frames required to accept an identification
+IDENTIFY_MAX_FRAMES = 12        # give up on this station (treat as NO_MATCH) past this many frames
+OBSERVE_SETTLE_STEPS = 5        # ~0.16 s to stop drifting before the camera is trusted
+OBSERVE_YAW_TOLERANCE = 0.05    # rad; Navigator only reaches (x, y), so OBSERVE must align heading itself
+OBSERVE_TURN_SPEED = 2.0        # rad/s wheel speed while aligning to observe_yaw
+OBSERVE_YAW_STEP_BUDGET = int(os.environ.get("OBSERVE_YAW_STEP_BUDGET", "3000"))  # lower via env var to test the failure path
+NAVIGATE_STEP_BUDGET = int(os.environ.get("NAVIGATE_STEP_BUDGET", "3000"))  # ~96 s; lower via env var to test the failure path
 
-    total_steps = 0
-    unvisited = list(CONFIG["stations"])
-    while unvisited:
-        pose = get_pose()
-        station = next_station(pose, unvisited, PLANNING_GRID)
-        print(f"SKELETON: state=PLAN chosen={station['id']} pose=({pose[0]:.2f}, {pose[1]:.2f})")
 
-        print(f"SKELETON: state=NAVIGATE target_observe={station['observe']}")
-        nav = Navigator(*station["observe"])
-        while robot.step(timestep) != -1:
-            total_steps += 1
-            nav.step()
-            if nav.done():
-                break
+class Mission:
+    """Drives the whole mission. Call step() once per robot.step(timestep)."""
 
-        label, confidence = identify_at_station(station["id"])
-        print(f"SKELETON: state=IDENTIFY station={station['id']} label={label} confidence={confidence:.2f}")
+    def __init__(self):
+        self.state = "PLAN"
+        self.unvisited = list(CONFIG["stations"])
+        self.station = None
+        self.nav = None
+        self.nav_steps = 0
+        self.settle_steps = 0
+        self.yaw_align_steps = 0
+        self.identify_frames = 0
+        self.last_label = None
+        self.consensus_count = 0
+        self._last_logged_state = None
 
-        if label == target:
-            elapsed = total_steps * timestep / 1000.0
-            print(f"SKELETON: state=STOP matched target '{target}' at {station['id']} (elapsed {elapsed:.1f}s)")
+    def done(self):
+        return self.state in ("STOP", "FAILED")
+
+    def _log(self, detail=""):
+        # Print on every state transition (not every step), per Issue #16's
+        # "prints its state on every transition" acceptance criterion.
+        if self.state != self._last_logged_state:
+            print(f"MISSION: state={self.state} {detail}".rstrip())
+            self._last_logged_state = self.state
+
+    def _skip_current_station(self, reason):
+        print(f"MISSION: {reason}, marking {self.station['id']} visited")
+        self.unvisited = [s for s in self.unvisited if s["id"] != self.station["id"]]
+        self.state = "PLAN"
+
+    def step(self):
+        if self.state == "PLAN":
+            self._plan()
+        elif self.state == "NAVIGATE":
+            self._navigate()
+        elif self.state == "OBSERVE":
+            self._observe()
+        elif self.state == "IDENTIFY":
+            self._identify()
+        elif self.state == "GOTO_OBSERVE":
+            self._goto_observe()
+        else:  # STOP or FAILED: terminal, both end in the deliberate stop()
+            stop()
+
+    def _plan(self):
+        if not self.unvisited:
+            self.state = "FAILED"
+            self._log("no unvisited stations left")
             stop()
             return
+        pose = get_pose()
+        self.station = next_station(pose, self.unvisited, PLANNING_GRID)
+        self._log(f"chosen={self.station['id']} from pose=({pose[0]:.2f}, {pose[1]:.2f})")
+        self.nav = Navigator(*self.station["observe"])
+        self.nav_steps = 0
+        self.state = "NAVIGATE"
 
-        unvisited = [s for s in unvisited if s["id"] != station["id"]]
+    def _navigate(self):
+        self._log(f"station={self.station['id']} target_observe={self.station['observe']}")
+        self.nav.step()
+        self.nav_steps += 1
+        if self.nav.done():
+            self.settle_steps = 0
+            self.yaw_align_steps = 0
+            self.state = "OBSERVE"
+        elif self.nav_steps >= NAVIGATE_STEP_BUDGET:
+            self._skip_current_station(f"NAVIGATE failed to reach {self.station['id']} within the step budget")
 
-    elapsed = total_steps * timestep / 1000.0
-    print(f"SKELETON: state=FAILED no station matched target '{target}' (elapsed {elapsed:.1f}s)")
+    def _observe(self):
+        self._log(f"station={self.station['id']}")
+        # Reaching the observe (x, y) says nothing about which way the robot
+        # is facing -- Navigator only cares about position. Rotate to the
+        # station's observe_yaw before the camera can be trusted; only start
+        # the settle countdown once heading is actually aligned.
+        _, _, yaw = get_pose()
+        yaw_error = normalise_angle(self.station["observe_yaw"] - yaw)
+        if abs(yaw_error) > OBSERVE_YAW_TOLERANCE:
+            self.yaw_align_steps += 1
+            if self.yaw_align_steps >= OBSERVE_YAW_STEP_BUDGET:
+                self._skip_current_station(f"OBSERVE failed to align heading at {self.station['id']} within the step budget")
+                return
+            rotate_in_place(OBSERVE_TURN_SPEED if yaw_error > 0 else -OBSERVE_TURN_SPEED)
+            self.settle_steps = 0
+            return
+
+        stop()
+        self.settle_steps += 1
+        if self.settle_steps >= OBSERVE_SETTLE_STEPS:
+            self.identify_frames = 0
+            self.last_label = None
+            self.consensus_count = 0
+            self.state = "IDENTIFY"
+
+    def _identify(self):
+        self._log(f"station={self.station['id']}")
+        label, confidence = identify_at_station(self.station["id"])
+        self.identify_frames += 1
+
+        if label != vision_utils.NO_MATCH and label == self.last_label:
+            self.consensus_count += 1
+        else:
+            self.consensus_count = 1
+            self.last_label = label
+
+        print(
+            f"MISSION: state=IDENTIFY station={self.station['id']} frame={self.identify_frames} "
+            f"label={label} confidence={confidence:.2f} consensus={self.consensus_count}/{IDENTIFY_CONSENSUS_FRAMES}"
+        )
+
+        if self.consensus_count >= IDENTIFY_CONSENSUS_FRAMES:
+            if self.last_label == target:
+                print(f"MISSION: IDENTIFY confirmed '{target}' at {self.station['id']} after {IDENTIFY_CONSENSUS_FRAMES} consecutive frames")
+                self.nav = Navigator(*self.station["observe"])
+                self.nav_steps = 0
+                self.state = "GOTO_OBSERVE"
+            else:
+                self._skip_current_station(f"IDENTIFY confirmed non-target label '{self.last_label}' at {self.station['id']}")
+        elif self.identify_frames >= IDENTIFY_MAX_FRAMES:
+            self._skip_current_station(f"IDENTIFY reached {IDENTIFY_MAX_FRAMES} frames with no consensus at {self.station['id']}")
+
+    def _goto_observe(self):
+        self._log(f"station={self.station['id']}")
+        self.nav.step()
+        self.nav_steps += 1
+        if self.nav.done() or self.nav_steps >= NAVIGATE_STEP_BUDGET:
+            self.state = "STOP"
+            self._log(f"stopped at {self.station['id']}")
+            stop()
     stop()
 
 
@@ -515,7 +633,15 @@ def main():
     print("Camera:", camera.getWidth(), "x", camera.getHeight())
     print("Basic timestep:", timestep)
 
-    run_mission_skeleton()
+    robot.step(timestep)  # GPS/IMU need one step before they report real values
+    if STUB_PERCEPTION:
+        print(f"MISSION: STUB_PERCEPTION on, claiming a match at {STUB_MATCH_STATION}")
+
+    mission = Mission()
+    while robot.step(timestep) != -1:
+        mission.step()
+        if mission.done():
+            break
 
 
 if __name__ == "__main__":

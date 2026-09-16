@@ -35,45 +35,82 @@ waypoint list, not a single waypoint or a bare heading.
 
 ### Perception
 
-- **Input:**
-- **Output:**
-- **Assumptions:**
-- **Failure behaviour:**
+**Signature:** `def identify_at_station(current_station_id) -> tuple[str, float]:`
+
+- **Input:** the station ID currently being observed. Internally captures `camera_bgr()`, runs
+  `vision_utils.find_poster_region()`, then `vision_utils.identify()` on the resulting crop -- or, if
+  `STUB_PERCEPTION` (Issue #29) is set, returns the stub's fixed answer instead, through the same
+  `(label, confidence)` shape.
+- **Output:** `(label, confidence)`, same contract as `identify()` above.
+- **Assumptions:** called only while stationary at (or very near) a station's `observe` position, so
+  the camera has a plausible view of that station's poster.
+- **Failure behaviour:** `find_poster_region()` returning `None` (no plausible poster region found)
+  produces `(NO_MATCH, 0.0)`, the same as a confident-but-wrong classification -- `IDENTIFY` treats
+  both identically, since either way this frame gives no usable evidence.
 
 ### Station search / visit ordering
 
-- **Input:**
-- **Output:**
-- **Assumptions:**
-- **Failure behaviour:**
+**Signature:** `def next_station(current_pose, unvisited, grid) -> dict:`
+
+- **Input:** current `(x, y, ...)` world pose; `unvisited`, the station dicts not yet inspected;
+  `grid`, the planning grid (Issue #11 policy).
+- **Output:** the station dict reached by the shortest `astar` path from the current cell. Ties break
+  by station ID, so repeated calls with the same input are deterministic (Issue #15).
+- **Assumptions:** `unvisited` is non-empty; `PLAN` checks this itself and goes to `FAILED` rather
+  than calling `next_station` on an empty list.
+- **Failure behaviour:** if every remaining station is unreachable from the current cell (`astar`
+  returns `[]` for all of them), the function still returns the least-bad candidate rather than
+  `None` -- `NAVIGATE`'s own step budget is what catches an actually-unreachable choice and returns
+  to `PLAN` with that station marked visited, rather than this function silently guessing.
 
 ### Global planning (A*)
 
-- **Input:**
-- **Output:**
-- **Assumptions:**
-- **Failure behaviour:**
+**Signature:** `def plan_path_to(x_goal, y_goal) -> tuple[list, list]:` (used directly by `NAVIGATE`
+via `Navigator`, which calls the equivalent internal replanning logic)
+
+- **Input:** a goal world coordinate; reads the robot's current pose itself via `pose_to_cell()`.
+- **Output:** `(waypoints, raw_path)` -- simplified world waypoints (Issue #13) and the raw A* cell
+  path (Issue #12), planned on `PLANNING_GRID` (Issue #11).
+- **Assumptions:** the goal cell is on the map; the start cell may be temporarily marked blocked by
+  the Issue #11 clearance margin (not a real obstacle), which this function patches around itself.
+- **Failure behaviour:** an unreachable goal returns `([], [])`; `Navigator` treats an empty path as
+  `SEARCH` (rotate and retry), not a crash.
 
 ### Waypoint following
 
-- **Input:**
-- **Output:**
-- **Assumptions:**
-- **Failure behaviour:**
+See "Navigation -> Control" above (`follow_path`) -- `Navigator` (Issue #14) wraps it with the same
+per-step contract, adding safety override on top rather than replacing it.
 
 ### Safety override
 
-- **Input:**
-- **Output:**
-- **Assumptions:**
-- **Failure behaviour:**
+**Signature:** `def select_behaviour(left_warn, right_warn, left_stop, right_stop, has_path) -> str:`
+
+- **Input:** boolean WARN/STOP flags per side from `proximity_values()` against the calibrated
+  thresholds (Issue #4), and whether a path currently exists.
+- **Output:** one of `"STOP"`, `"AVOID"`, `"FOLLOW"`, `"SEARCH"`, in that priority order (Safety >
+  Path following > Search, Workshop 8 Part 5).
+- **Assumptions:** called once per control step from within `Navigator.step()`; never called directly
+  by the mission state machine, which only ever asks `Navigator` "are you done yet?"
+  (`Navigator.done()`).
+- **Failure behaviour:** if no path exists and none can be planned (`SEARCH`), `Navigator` rotates and
+  retries rather than stopping dead or raising; `NAVIGATE`'s step budget is the mission-level backstop
+  if `SEARCH` never resolves.
 
 ### Mission state machine
 
-- **Input:**
-- **Output:**
-- **Assumptions:**
-- **Failure behaviour:**
+**Signature:** `class Mission:` with `step()` (call once per `robot.step(timestep)`) and `done()`.
+
+- **Input:** none per call -- reads `get_pose()`, `proximity_values()` and the camera internally
+  through the components it drives (`next_station`, `Navigator`, `identify_at_station`).
+- **Output:** none returned; drives `set_speed()` as a side effect (via the components above) and
+  exposes `self.state` (one of `PLAN`, `NAVIGATE`, `OBSERVE`, `IDENTIFY`, `GOTO_OBSERVE`, `STOP`,
+  `FAILED`) and `done()` (`True` once `STOP` or `FAILED`).
+- **Assumptions:** `MISSION["target"]` is read once at controller start-up (`target`, from
+  `group_project_controller.py`'s module scope), never re-read mid-mission.
+- **Failure behaviour:** see `docs/architecture.md`'s state table -- every non-terminal state has a
+  named response to its component failing or returning nothing, and every failure path shrinks
+  `unvisited` and returns to `PLAN`, which cannot loop forever since `PLAN` on an empty `unvisited`
+  goes to `FAILED`.
 
 ### Telemetry
 
