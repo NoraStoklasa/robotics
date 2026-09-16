@@ -16,12 +16,20 @@ Code in issues 08, 13 and 16 must match these signatures exactly — if implemen
 
 ### Navigation → Control
 
-**Signature:** fill in — single waypoint? desired heading? full path?
+**Signature:** `def follow_path(waypoints, base_speed=BASE_SPEED, kp=KP_HEADING):` — full simplified
+waypoint list, not a single waypoint or a bare heading.
 
-- **Input:**
-- **Output:**
-- **Assumptions:**
-- **Failure behaviour:**
+- **Input:** `waypoints`, a list of `(x, y)` world coordinates from `path_to_waypoints(simplify_path(astar(...)))`
+  (Issues #11-#13), already excluding the robot's own starting cell.
+- **Output:** none returned; it is a generator driving `set_speed()` as a side effect once per
+  `next()` call, yielding the `(x, y)` waypoint currently being driven to so a caller can log it.
+  Raises `StopIteration` once every waypoint has been reached within `WAYPOINT_TOLERANCE`.
+- **Assumptions:** called once per Webots control step (one `next()` per `robot.step(timestep)`);
+  `waypoints` is collision-free on `PLANNING_GRID`; the caller does not issue wheel commands directly
+  while a `follow_path` generator is active, so `set_speed()`'s single clamp stays authoritative.
+- **Failure behaviour:** an empty `waypoints` list makes the generator a no-op that returns
+  immediately (no motion, no error) — callers should check for an empty A* result themselves before
+  calling `follow_path`, since that means no path was found.
 
 ## All other modules
 

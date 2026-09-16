@@ -25,11 +25,11 @@ Technical approach, implementation and system integration (9 marks).
 - Match the navigation→control signature agreed in `docs/interfaces.md` (issue 26) — waypoint, heading or full path, whichever the team settled on.
 
 ## Acceptance criteria
-- [ ] From start A, the robot follows a planned path to at least three different stations and ends within 0.20 m of each `observe` position.
-- [ ] Cross-track deviation from the planned path stays under 0.15 m throughout, measured by logging `get_pose()` against the waypoint list.
-- [ ] Path simplification reduces the waypoint count by at least 50 percent on a path of 20 or more cells, and the simplified path still contains no obstacle cell.
-- [ ] Two `KP_HEADING` values are tested and the comparison, including any oscillation seen, is recorded in `docs/control_tuning.md`.
-- [ ] The robot completes a full path with no proximity reading exceeding the calibrated `STOP` threshold.
+- [x] From start A, the robot follows a planned path to at least three different stations and ends within 0.20 m of each `observe` position.
+- [x] Cross-track deviation from the planned path stays under 0.15 m throughout, measured by logging `get_pose()` against the waypoint list.
+- [x] Path simplification reduces the waypoint count by at least 50 percent on a path of 20 or more cells, and the simplified path still contains no obstacle cell.
+- [x] Two `KP_HEADING` values are tested and the comparison, including any oscillation seen, is recorded in `docs/control_tuning.md`.
+- [x] The robot completes a full path with no proximity reading exceeding the calibrated `STOP` threshold.
 
 ## Evidence for the report
 A trajectory plot overlaying planned path and logged actual pose, plus the `KP_HEADING` comparison table.

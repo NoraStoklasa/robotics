@@ -130,3 +130,27 @@ def astar(grid, start, goal):
                 came_from[neighbour] = current
 
     return []
+
+
+def simplify_path(path):
+    """Collapse runs of collinear cells (Issue #13), keeping start, end and every corner.
+
+    The direct line between two kept points retraces exactly the straight run
+    of free cells the search already found, so this cannot introduce a
+    collision the original path didn't already avoid.
+    """
+    if len(path) <= 2:
+        return list(path)
+    simplified = [path[0]]
+    for i in range(1, len(path) - 1):
+        prev_dir = (path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1])
+        next_dir = (path[i + 1][0] - path[i][0], path[i + 1][1] - path[i][1])
+        if prev_dir != next_dir:
+            simplified.append(path[i])
+    simplified.append(path[-1])
+    return simplified
+
+
+def path_to_waypoints(path):
+    """Grid cell path -> list of world (x, y) waypoints, one per cell centre."""
+    return [grid_to_world(row, col) for row, col in path]
