@@ -82,6 +82,14 @@ KP_HEADING = 8.0
 BASE_SPEED = 5.0            # commanded wheel speed (rad/s); MAX_SPEED clamps it
 WAYPOINT_TOLERANCE = 0.05   # metres; well under half a grid cell (0.1 m)
 
+# The station observe poses are the final stopping positions, but they are
+# very close to the posters. That can make the target crop clipped or too
+# distorted for the classifier, especially for targets like wall_clock. For
+# the search/identify step, stand a little further back along the same viewing
+# line, then move to the real observe pose only after the target is confirmed.
+IDENTIFY_BACKOFF_DISTANCE = 0.5  # metres behind the supplied observe pose
+IDENTIFY_BACKOFF_STEP = 0.1      # shrink by one grid cell if the full backoff is blocked
+
 # Reactive avoidance and recovery (Issue #14). Sensor groups per Workshop 8 /
 # Issue #4: ps0-ps2 front-right, ps5-ps7 front-left.
 FRONT_RIGHT_PS = (0, 1, 2)
@@ -186,6 +194,38 @@ def bearing_to(x, y):
 def pose_to_cell():
     px, py, _ = get_pose()
     return world_to_grid(px, py)
+
+
+def identify_position_for(station):
+    """Return the world point to use for taking the identification image.
+
+    station["observe"] remains the official final stop. This helper only
+    gives the camera more standoff before classification by moving backwards
+    from observe_yaw, which points at the poster. Some stations have map
+    obstacles behind the ideal viewing point, so try the largest clear backoff
+    first and shrink toward observe if needed.
+    """
+    observe_x, observe_y = station["observe"]
+    observe_yaw = station["observe_yaw"]
+
+    # Work in 0.1 m steps because the occupancy grid resolution is 0.1 m/cell.
+    # This keeps the check easy to explain: try 0.5 m, then 0.4 m, and so on.
+    steps = round(IDENTIFY_BACKOFF_DISTANCE / IDENTIFY_BACKOFF_STEP)
+    for step in range(steps, -1, -1):
+        distance = step * IDENTIFY_BACKOFF_STEP
+        identify_x = observe_x - distance * math.cos(observe_yaw)
+        identify_y = observe_y - distance * math.sin(observe_yaw)
+        identify_cell = world_to_grid(identify_x, identify_y)
+
+        # Use only cells that are free in both the real occupancy grid and the
+        # inflated planning grid. That avoids choosing a viewing point inside
+        # an obstacle or too close to one.
+        if GRID[identify_cell] == 0 and PLANNING_GRID[identify_cell] == 0:
+            return identify_x, identify_y
+
+    # The observe cell itself should be free, but keep a final fallback so this
+    # helper never prevents the mission from trying a station.
+    return observe_x, observe_y
 
 
 # ------------------------------------------------------------------
@@ -543,6 +583,7 @@ class Mission:
         self.last_confidence = 0.0
         self.consensus_count = 0
         self.label_window = deque(maxlen=IDENTIFY_WINDOW_FRAMES)
+        self.identify_from_observe = False
         self.final_align_steps = 0
         self.final_hold_steps = 0
         self.final_distance = None
@@ -691,13 +732,19 @@ class Mission:
             return
         pose = get_pose()
         self.station = next_station(pose, self.unvisited, PLANNING_GRID)
-        self._log(f"chosen={self.station['id']} from pose=({pose[0]:.2f}, {pose[1]:.2f})")
-        self.nav = Navigator(*self.station["observe"])
+        identify_x, identify_y = identify_position_for(self.station)
+        observe_x, observe_y = self.station["observe"]
+        self.identify_from_observe = math.isclose(identify_x, observe_x) and math.isclose(identify_y, observe_y)
+        self._log(
+            f"chosen={self.station['id']} from pose=({pose[0]:.2f}, {pose[1]:.2f}) "
+            f"identify_pose=({identify_x:.2f}, {identify_y:.2f})"
+        )
+        self.nav = Navigator(identify_x, identify_y)
         self.nav_steps = 0
         self.state = "NAVIGATE"
 
     def _navigate(self):
-        self._log(f"station={self.station['id']} target_observe={self.station['observe']}")
+        self._log(f"station={self.station['id']} final_observe={self.station['observe']}")
         self.nav.step()
         self.nav_steps += 1
         if self.nav.done():
@@ -762,6 +809,16 @@ class Mission:
             else:
                 self._skip_current_station(f"IDENTIFY confirmed non-target label '{self.last_label}' at {self.station['id']}")
         elif self.identify_frames >= IDENTIFY_MAX_FRAMES:
+            if not self.identify_from_observe:
+                print(
+                    f"MISSION: IDENTIFY reached {IDENTIFY_MAX_FRAMES} frames with no consensus at "
+                    f"{self.station['id']}, retrying from observe pose"
+                )
+                self.identify_from_observe = True
+                self.nav = Navigator(*self.station["observe"])
+                self.nav_steps = 0
+                self.state = "NAVIGATE"
+                return
             self._skip_current_station(f"IDENTIFY reached {IDENTIFY_MAX_FRAMES} frames with no consensus at {self.station['id']}")
 
     def _goto_observe(self):
