@@ -498,16 +498,19 @@ def stub_identify(current_station_id):
     return target, 0.95
 
 
+_DEBUG_CAPTURE_DIR = os.environ.get("DEBUG_CAPTURE_DIR")
+_debug_capture_count = {}
+
+
 def identify_at_station(current_station_id):
     """Capture a frame and identify the target, or use the Issue #29 stub."""
     if STUB_PERCEPTION:
         return stub_identify(current_station_id)
     image = camera_bgr()
-    crop_box = vision_utils.find_poster_region(image)
-    if crop_box is None:
-        return vision_utils.NO_MATCH, 0.0
-    x, y, w, h = crop_box
-    return vision_utils.identify(image[y:y + h, x:x + w])
+    if _DEBUG_CAPTURE_DIR:
+        _debug_capture_count[current_station_id] = _debug_capture_count.get(current_station_id, 0) + 1
+        cv2.imwrite(f"{_DEBUG_CAPTURE_DIR}/{current_station_id}_frame{_debug_capture_count[current_station_id]:02d}.png", image)
+    return vision_utils.identify_frame(image)
 
 
 # ------------------------------------------------------------------

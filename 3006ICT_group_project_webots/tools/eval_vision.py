@@ -110,8 +110,19 @@ def load_target_rows(identifier) -> list[dict]:
             if crop_box is None:
                 scored = empty_score("no_crop")
             else:
-                x, y, w, h = crop_box
-                scored = score_crop(image[y:y + h, x:x + w], identifier)
+                vu.identify_frame(image)
+                r = vu.identify.last_result
+                scored = {
+                    "raw_label": r["raw_label"],
+                    "confidence": r["confidence"],
+                    "runner_up": r["runner_up"],
+                    "runner_up_confidence": r["runner_up_confidence"],
+                    "margin": r["margin"],
+                    "reference_similarity": r["reference_similarity"],
+                    "reference_threshold": r["reference_threshold"],
+                    "scores": r["scores"],
+                    "base_reject_reason": None,
+                }
 
         rows.append({
             "kind": "target",

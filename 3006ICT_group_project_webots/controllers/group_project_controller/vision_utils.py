@@ -671,3 +671,51 @@ identify.last_result = {
     "scores": {},
 }
 identify.last_scores = {}
+
+
+def identify_frame(image: np.ndarray) -> tuple[str, float]:
+    """Run `find_poster_region()` then `identify()`, trying more than one
+    interpretation of where the poster is on the barrier when they disagree,
+    instead of committing to the single geometric projection.
+
+    Found on real live `headphones` (S7) frames: the precise projection
+    (`_POSTER_WIDTH_FRAC`/`_POSTER_HEIGHT_FRAC` of the detected barrier) can
+    land squarely in the low-information gap between the two earcups, while
+    that same barrier's own full extent -- before the fraction narrows it --
+    reliably shows both earcups plus the headband. On the exact frames that
+    failed live, confidence rose from 0.36-0.44 (rejected) to 0.43-0.77
+    (mostly accepted), and one frame that had been confidently *wrong*
+    (`running_shoe`/`backpack` at 0.38-0.41 on the narrow crop) came back
+    correctly as `headphones` at 0.77 on the full barrier box.
+
+    Tried replacing the narrow projection outright: rejected -- it is what
+    `docs/find_poster_region.md`'s hand-labelled IoU test verifies against
+    real ground truth (19/20 required frames), and the other 7 targets rely
+    on it staying tight for a clean square crop; a blanket geometric rule
+    for "when to widen" (centroid-of-darkness, then a brightness-notch
+    detector) was tried and rejected too -- both failed to separate this
+    failure from ordinary working frames on real data (the notch detector
+    scored an *accepted*, high-confidence real `headphones` frame the same
+    as the live failures). Trying both projections and keeping whichever
+    `identify()` actually accepts gets the benefit without weakening the
+    already-verified tight crop: if neither is accepted the narrow crop's
+    own (rejected) result is kept, unchanged from calling `identify()`
+    directly."""
+    crop_box = find_poster_region(image)
+    if crop_box is None:
+        return identify(None)
+    x, y, w, h = crop_box
+    boxes = [(x, y, w, h)]
+    candidates = find_poster_region.last_candidates
+    if candidates:
+        wide = candidates[0]["from_barrier"]
+        if wide != (x, y, w, h):
+            boxes.append(wide)
+    attempts = []
+    for bx, by, bw, bh in boxes:
+        label, confidence = identify(image[by:by + bh, bx:bx + bw])
+        attempts.append((label, confidence, dict(identify.last_result)))
+    label, confidence, result = max(attempts, key=lambda a: (a[2]["accepted"], a[1]))
+    identify.last_result = result
+    identify.last_scores = result["scores"]
+    return label, confidence

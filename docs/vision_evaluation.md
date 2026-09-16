@@ -19,7 +19,7 @@ head predicts a class, the crop must still look enough like that class's supplie
 - Valid outputs across station and distractor rows: 120/120.
 - Distractor false-accepts at the shipped threshold: 1/20.
 - Combined best captured station crop accuracy: 8/8.
-- `NO_MATCH` rate over all evaluated rows: 0.525.
+- `NO_MATCH` rate over all evaluated rows: 0.408.
 - Threshold sweep values tested: 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80.
 
 ## Per-World Station Coverage
@@ -30,7 +30,7 @@ another world.
 
 | World | Captured stations | Best-crop correct | Missing stations |
 |---|---|---:|---|
-| A | `S1`, `S2`, `S3`, `S4`, `S5`, `S6`, `S7`, `S8` | 7/8 |  |
+| A | `S1`, `S2`, `S3`, `S4`, `S5`, `S6`, `S7`, `S8` | 8/8 |  |
 | B | `S1`, `S2`, `S3`, `S4`, `S5`, `S6`, `S7`, `S8` | 8/8 |  |
 | C | `S1`, `S2`, `S3`, `S4`, `S5`, `S6`, `S7`, `S8` | 7/8 |  |
 
@@ -38,13 +38,13 @@ another world.
 
 | Station | Truth | Returned | Confidence | Margin | Reference similarity | Frame |
 |---|---|---|---:|---:|---:|---|
-| `S1` | `soda_can` | `soda_can` | 0.843 | 0.800 | 0.719 | `C_S1_d0p800_hp00.png` |
+| `S1` | `soda_can` | `soda_can` | 0.858 | 0.807 | 0.200 | `C_S1_d0p450_hm10.png` |
 | `S2` | `coffee_mug` | `coffee_mug` | 0.958 | 0.943 | 0.319 | `A_S2_d0p800_hp10.png` |
 | `S3` | `backpack` | `backpack` | 0.621 | 0.463 | 0.216 | `B_S3_d0p800_hm10_issue9.png` |
 | `S4` | `fire_extinguisher` | `fire_extinguisher` | 0.931 | 0.917 | 0.070 | `B_S4_d0p295_hp00.png` |
 | `S5` | `camera` | `camera` | 0.987 | 0.983 | 0.006 | `B_S5_d0p450_hm10.png` |
 | `S6` | `running_shoe` | `running_shoe` | 0.988 | 0.985 | 0.652 | `B_S6_d0p800_hm10.png` |
-| `S7` | `headphones` | `headphones` | 0.910 | 0.873 | -0.026 | `C_S7_d0p295_hp00_issue9.png` |
+| `S7` | `headphones` | `headphones` | 0.911 | 0.877 | 0.057 | `C_S7_d0p295_hp00_issue9.png` |
 | `S8` | `wall_clock` | `wall_clock` | 0.994 | 0.991 | 0.592 | `A_S8_d1p000_hp00.png` |
 
 ## Confusion Matrix
@@ -65,14 +65,14 @@ rate is 0.050.
 
 | Label | TP | FP | FN | Precision | Recall |
 |---|---:|---:|---:|---:|---:|
-| `soda_can` | 6 | 0 | 8 | 1.000 | 0.429 |
+| `soda_can` | 8 | 0 | 6 | 1.000 | 0.571 |
 | `coffee_mug` | 7 | 0 | 7 | 1.000 | 0.500 |
 | `backpack` | 5 | 0 | 9 | 1.000 | 0.357 |
-| `fire_extinguisher` | 3 | 1 | 5 | 0.750 | 0.375 |
-| `camera` | 9 | 1 | 2 | 0.900 | 0.818 |
-| `running_shoe` | 10 | 1 | 4 | 0.909 | 0.714 |
-| `headphones` | 5 | 1 | 6 | 0.833 | 0.455 |
-| `wall_clock` | 8 | 0 | 6 | 1.000 | 0.571 |
+| `fire_extinguisher` | 5 | 1 | 3 | 0.833 | 0.625 |
+| `camera` | 11 | 3 | 0 | 0.786 | 1.000 |
+| `running_shoe` | 13 | 1 | 1 | 0.929 | 0.929 |
+| `headphones` | 7 | 1 | 4 | 0.875 | 0.636 |
+| `wall_clock` | 9 | 0 | 5 | 1.000 | 0.643 |
 
 ## Distractor Rejection
 

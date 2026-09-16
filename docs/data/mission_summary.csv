@@ -18,3 +18,5 @@ run_timestamp,start_id,target,station,final_distance,completion_time,outcome
 20260916T042810Z,A,soda_can,S1,0.043,144.58,SUCCESS
 20260916T101329Z,A,fire_extinguisher,S4,0.089,79.81,SUCCESS
 20260916T101724Z,A,headphones,S7,,192.86,FAILED
+20260916T102355Z,A,headphones,S7,,192.86,FAILED
+20260916T104746Z,A,headphones,S7,0.099,180.83,SUCCESS

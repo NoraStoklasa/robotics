@@ -24,8 +24,8 @@ debugging history in `docs/find_poster_region_notes.md`.
 
 | Set | Hit | Total | Rate |
 |---|---:|---:|---:|
-| Unclipped (required, >=90%) | 36 | 36 | 100.0% |
-| Clipped (not required) | 52 | 67 | 77.6% |
+| Unclipped (required, >=90%) | 46 | 46 | 100.0% |
+| Clipped (not required) | 61 | 73 | 83.6% |
 
 ## IoU against hand-labelled ground truth
 
@@ -36,20 +36,21 @@ file and reported separately below so the required labelled set is unambiguous.
 
 | Set | n | Mean IoU | >= 0.5 |
 |---|---:|---:|---:|
-| Required unclipped labelled set | 20 | 0.787 | 20/20 |
+| Required unclipped labelled set | 20 | 0.782 | 19/20 |
 
 | Frame | GT | Predicted | IoU |
 |---|---|---|---:|
 | `S1_d1p000_op00.png` | (57, 18, 41, 41) | (57, 19, 41, 41) | 0.95 |
 | `S1_d0p800_op00.png` | (54, 6, 52, 52) | (54, 7, 51, 52) | 0.94 |
 | `S3_d0p800_op00.png` | (51, 6, 52, 52) | (51, 7, 51, 52) | 0.94 |
+| `A_S8_d1p000_hp00.png` | (60, 18, 42, 41) | (60, 19, 41, 41) | 0.93 |
 | `C_S1_d0p800_hp00.png` | (55, 8, 52, 51) | (56, 7, 50, 53) | 0.93 |
 | `C_S3_d0p800_hp00.png` | (51, 6, 52, 53) | (52, 7, 50, 53) | 0.93 |
 | `S3_d1p300_op00.png` | (61, 27, 31, 32) | (61, 29, 31, 31) | 0.91 |
+| `S3_d1p000_op00.png` | (61, 18, 43, 42) | (62, 19, 40, 41) | 0.91 |
 | `A_S8_d0p800_hp00.png` | (54, 6, 54, 53) | (56, 7, 50, 53) | 0.89 |
 | `C_S3_d1p000_hm10.png` | (29, 17, 43, 43) | (33, 17, 39, 42) | 0.89 |
 | `A_S8_d1p000_hp10.png` | (91, 18, 43, 41) | (90, 17, 38, 43) | 0.81 |
-| `C_S1_d1p000_hp10.png` | (91, 20, 41, 38) | (90, 18, 38, 42) | 0.80 |
 | `C_S3_d1p000_hp10.png` | (94, 18, 41, 41) | (92, 17, 37, 42) | 0.80 |
 | `A_S2_d1p000_hm10.png` | (25, 17, 42, 42) | (32, 17, 38, 42) | 0.78 |
 | `A_S2_d0p800_hp00.png` | (51, 8, 52, 52) | (44, 8, 55, 55) | 0.77 |
@@ -57,11 +58,11 @@ file and reported separately below so the required labelled set is unambiguous.
 | `A_S2_d0p800_hp10.png` | (82, 8, 54, 50) | (90, 7, 38, 52) | 0.68 |
 | `B_S6_d0p800_hm10.png` | (21, 6, 53, 52) | (32, 7, 38, 53) | 0.68 |
 | `A_S8_d0p800_hp10.png` | (87, 8, 54, 50) | (83, 7, 42, 52) | 0.64 |
-| `S3_d1p000_op00.png` | (61, 18, 43, 42) | (69, 19, 51, 41) | 0.58 |
-| `A_S8_d1p000_hp00.png` | (60, 18, 42, 41) | (67, 19, 52, 41) | 0.57 |
 | `B_S6_d1p000_hp00.png` | (59, 18, 41, 40) | (49, 14, 63, 46) | 0.57 |
+| `C_S1_d1p000_hp10.png` | (91, 20, 41, 38) | (32, 21, 38, 39) | 0.00 |
 
-**All 20/20 required unclipped frames clear IoU >= 0.5** -- see `docs/find_poster_region_notes.md` section 4 for how the frames that originally failed (all landing on the same degenerate fallback box) were fixed.
+**1 of 20 required frames score below 0.5**, not hidden in the mean above:
+- `C_S1_d1p000_hp10.png`: 0.00
 
 ## Additional Clipped Stress Cases
 
@@ -71,23 +72,23 @@ diagnostics, but not the acceptance set.
 
 | Set | n | Mean IoU | >= 0.5 |
 |---|---:|---:|---:|
-| Clipped stress cases | 5 | 0.144 | 0/5 |
+| Clipped stress cases | 5 | 0.253 | 0/5 |
 
 | Frame | GT | Predicted | IoU |
 |---|---|---|---:|
+| `B_S6_d0p295_hp10.png` | (45, 0, 115, 55) | (86, 0, 59, 45) | 0.42 |
 | `C_S1_d0p450_hm10.png` | (0, 1, 95, 56) | (32, 8, 38, 57) | 0.33 |
+| `B_S4_d0p420_hp00.png` | (27, 0, 103, 57) | (90, 9, 38, 65) | 0.28 |
 | `A_S8_d0p295_hp00.png` | (2, 0, 145, 56) | (32, 9, 38, 61) | 0.21 |
-| `B_S6_d0p295_hp10.png` | (45, 0, 115, 55) | (32, 9, 38, 61) | 0.15 |
 | `B_S6_d0p450_hm10.png` | (0, 0, 94, 56) | (90, 7, 38, 56) | 0.03 |
-| `B_S4_d0p420_hp00.png` | (27, 0, 103, 57) | None | 0.00 |
 
 ## No-poster negative frames
 
 18 real frames from a full rotation sweep (no route planning -- just rotate in place through
 20 deg steps from a start pose and photograph each heading; see the temporary capture block
 in `group_project_controller.py`'s `main()`, removed after this data was gathered).
-**15/18 correctly returned `None`** (required: >=10).
-Of the 3 that did return a box, `rot05_100deg.png` and
+**13/18 correctly returned `None`** (required: >=10).
+Of the 5 that did return a box, `rot05_100deg.png` and
 `rot06_120deg.png` genuinely have a station's poster visible at a distance/oblique angle
 during the sweep (true positives, not misses) and `rot14_280deg.png` is a confirmed false
 positive on an empty sky/water gradient -- a known, accepted trade-off (see
@@ -100,9 +101,9 @@ has large headroom (>=10 required,
 |---|---|
 | `rot00_000deg.png` | None |
 | `rot01_020deg.png` | None |
-| `rot02_040deg.png` | None |
+| `rot02_040deg.png` | (32, 9, 38, 64) |
 | `rot03_060deg.png` | None |
-| `rot04_080deg.png` | None |
+| `rot04_080deg.png` | (32, 33, 38, 44) |
 | `rot05_100deg.png` | (63, 21, 19, 39) |
 | `rot06_120deg.png` | (126, 19, 16, 40) |
 | `rot07_140deg.png` | None |
