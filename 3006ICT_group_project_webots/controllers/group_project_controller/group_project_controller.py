@@ -9,7 +9,7 @@ Mission:
 import json
 import math
 import os
-from collections import deque
+from collections import Counter, deque
 
 import cv2
 import numpy as np
@@ -494,8 +494,9 @@ def identify_at_station(current_station_id):
 # component signatures this drives. Replaces Issue #29's simpler skeleton
 # with the real components against an interface that skeleton already proved.
 # ------------------------------------------------------------------
-IDENTIFY_CONSENSUS_FRAMES = 3   # consecutive agreeing frames required to accept an identification
-IDENTIFY_MAX_FRAMES = 12        # give up on this station (treat as NO_MATCH) past this many frames
+IDENTIFY_CONSENSUS_FRAMES = 3   # agreeing frames required, within the trailing window, to accept an identification
+IDENTIFY_WINDOW_FRAMES = 5      # trailing window IDENTIFY_CONSENSUS_FRAMES is counted over, so one bad frame doesn't reset progress
+IDENTIFY_MAX_FRAMES = 20        # give up on this station (treat as NO_MATCH) past this many frames
 OBSERVE_SETTLE_STEPS = 5        # ~0.16 s to stop drifting before the camera is trusted
 OBSERVE_YAW_TOLERANCE = 0.05    # rad; Navigator only reaches (x, y), so OBSERVE must align heading itself
 OBSERVE_TURN_SPEED = 2.0        # rad/s wheel speed while aligning to observe_yaw
@@ -541,6 +542,7 @@ class Mission:
         self.last_label = None
         self.last_confidence = 0.0
         self.consensus_count = 0
+        self.label_window = deque(maxlen=IDENTIFY_WINDOW_FRAMES)
         self.final_align_steps = 0
         self.final_hold_steps = 0
         self.final_distance = None
@@ -728,6 +730,7 @@ class Mission:
             self.identify_frames = 0
             self.last_label = None
             self.consensus_count = 0
+            self.label_window = deque(maxlen=IDENTIFY_WINDOW_FRAMES)
             self.state = "IDENTIFY"
 
     def _identify(self):
@@ -737,20 +740,22 @@ class Mission:
         self.last_confidence = confidence
         self._note_candidate(label, confidence)
 
-        if label != vision_utils.NO_MATCH and label == self.last_label:
-            self.consensus_count += 1
+        self.label_window.append(label)
+        seen_labels = Counter(l for l in self.label_window if l != vision_utils.NO_MATCH)
+        if seen_labels:
+            self.last_label, self.consensus_count = seen_labels.most_common(1)[0]
         else:
-            self.consensus_count = 1
-            self.last_label = label
+            self.last_label, self.consensus_count = None, 0
 
         print(
             f"MISSION: state=IDENTIFY station={self.station['id']} frame={self.identify_frames} "
-            f"label={label} confidence={confidence:.2f} consensus={self.consensus_count}/{IDENTIFY_CONSENSUS_FRAMES}"
+            f"label={label} confidence={confidence:.2f} "
+            f"consensus={self.consensus_count}/{IDENTIFY_CONSENSUS_FRAMES} (of last {len(self.label_window)} frames)"
         )
 
         if self.consensus_count >= IDENTIFY_CONSENSUS_FRAMES:
             if self.last_label == target:
-                print(f"MISSION: IDENTIFY confirmed '{target}' at {self.station['id']} after {IDENTIFY_CONSENSUS_FRAMES} consecutive frames")
+                print(f"MISSION: IDENTIFY confirmed '{target}' at {self.station['id']} after {IDENTIFY_CONSENSUS_FRAMES} of the last {IDENTIFY_WINDOW_FRAMES} frames")
                 self.nav = Navigator(*self.station["observe"])
                 self.nav_steps = 0
                 self.state = "GOTO_OBSERVE"

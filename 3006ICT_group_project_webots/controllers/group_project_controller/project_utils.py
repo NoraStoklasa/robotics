@@ -8,14 +8,23 @@ ROOT = Path(__file__).resolve().parents[2]
 CONFIG = json.loads((ROOT / "config" / "project_config.json").read_text())
 
 X_MIN = CONFIG["arena"]["x_min"]
+X_MAX = CONFIG["arena"]["x_max"]
+Y_MIN = CONFIG["arena"]["y_min"]
 Y_MAX = CONFIG["arena"]["y_max"]
 RES = CONFIG["arena"]["resolution"]
+GRID_ROWS = round((Y_MAX - Y_MIN) / RES)
+GRID_COLS = round((X_MAX - X_MIN) / RES)
 
 
 def world_to_grid(x, y):
-    """World (x, y) -> occupancy-grid (row, col)."""
-    col = int((x - X_MIN) / RES)
-    row = int((Y_MAX - y) / RES)
+    """World (x, y) -> occupancy-grid (row, col).
+
+    Clamped to the grid's valid index range: a coordinate exactly on the
+    arena boundary (x == x_max or y == y_min) would otherwise divide out to
+    GRID_COLS/GRID_ROWS, one past the last valid index.
+    """
+    col = min(max(int((x - X_MIN) / RES), 0), GRID_COLS - 1)
+    row = min(max(int((Y_MAX - y) / RES), 0), GRID_ROWS - 1)
     return row, col
 
 

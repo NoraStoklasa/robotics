@@ -15,3 +15,4 @@ run_timestamp,start_id,target,station,final_distance,completion_time,outcome
 20260916T040826Z,A,running_shoe,S7,0.020,182.08,SUCCESS
 20260916T041150Z,B,soda_can,S8,0.010,37.95,SUCCESS
 20260916T041520Z,C,soda_can,S1,,192.03,FAILED
+20260916T042810Z,A,soda_can,S1,0.043,144.58,SUCCESS
