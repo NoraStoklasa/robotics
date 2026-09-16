@@ -21,11 +21,11 @@ Project complexity and robustness (6 marks); Live code/system demonstration (10 
 - Log every behaviour switch through the telemetry logger.
 
 ## Acceptance criteria
-- [ ] In a run deliberately started facing a barrier, the robot avoids contact and still reaches the goal within 0.20 m.
-- [ ] Across all 24 start/station pairs, no run records a proximity reading above the calibrated `STOP` threshold for more than 3 consecutive timesteps.
-- [ ] After each avoidance manoeuvre the robot returns to within `WAYPOINT_TOLERANCE` of a waypoint on the planned path, or a replan is logged.
-- [ ] The stuck detector fires and recovers in a test where the robot is placed against a barrier corner, with recovery visible in the log.
-- [ ] Safety demonstrably overrides path following: a log excerpt shows an avoidance behaviour active while a waypoint was still pending.
+- [x] In a run deliberately started facing a barrier, the robot avoids contact and still reaches the goal within 0.20 m.
+- [x] Across all 24 start/station pairs, no run records a proximity reading above the calibrated `STOP` threshold for more than 3 consecutive timesteps. (All 24 official pairs recorded 0 such readings; see `docs/avoidance_and_recovery.md` for two deliberately adversarial stress tests, beyond the required 24, that found a real limit worth naming honestly.)
+- [x] After each avoidance manoeuvre the robot returns to within `WAYPOINT_TOLERANCE` of a waypoint on the planned path, or a replan is logged.
+- [x] The stuck detector fires and recovers in a test where the robot is placed against a barrier corner, with recovery visible in the log.
+- [x] Safety demonstrably overrides path following: a log excerpt shows an avoidance behaviour active while a waypoint was still pending.
 
 ## Evidence for the report
 An annotated trajectory showing an avoidance event and the return to path, plus a table of behaviour-switch counts per run.
