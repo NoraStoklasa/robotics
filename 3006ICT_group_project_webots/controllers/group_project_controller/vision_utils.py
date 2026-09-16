@@ -420,9 +420,22 @@ MIN_CONFIDENCE_MARGIN = 0.20
 # image for the predicted class and rejects the known false-accept patterns
 # without changing the classifier's public interface.
 MIN_REFERENCE_SIMILARITY = -0.05
+# `fire_extinguisher` has no per-label floor here, unlike `coffee_mug`/
+# `wall_clock` below. Measured directly (2026-09-16): even a manually
+# traced, pixel-perfect crop of the real in-game poster -- no shadow/floor
+# contamination at all -- only scores ~0.11 against the studio reference
+# photo, despite the classifier itself being 97% confident on that same
+# crop. The in-game render just doesn't resemble the reference photo at
+# this metric's pixel/colour-histogram level, regardless of crop quality,
+# so any floor tight enough to reject the known false-accept distractors
+# (`books_a.png`/`books_b.png`, ~0.17) would also reject every real
+# `fire_extinguisher` crop -- there is no threshold that keeps both. Checked
+# the full confusion matrix before dropping the floor: `fire_extinguisher`
+# has zero false positives against every real in-game frame from any
+# station, so the only cost of removing it is those two distractor images,
+# which never appear inside the Webots simulation.
 MIN_REFERENCE_SIMILARITY_BY_LABEL = {
     "coffee_mug": 0.10,
-    "fire_extinguisher": 0.20,
     "wall_clock": 0.00,
 }
 _REFERENCE_SIMILARITY_SIZE = 64

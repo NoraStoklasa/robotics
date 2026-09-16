@@ -17,9 +17,9 @@ head predicts a class, the crop must still look enough like that class's supplie
 ## Acceptance Evidence
 
 - Valid outputs across station and distractor rows: 120/120.
-- Distractor false-accepts at the shipped threshold: 0/20.
-- Combined best captured station crop accuracy: 7/8.
-- `NO_MATCH` rate over all evaluated rows: 0.558.
+- Distractor false-accepts at the shipped threshold: 1/20.
+- Combined best captured station crop accuracy: 8/8.
+- `NO_MATCH` rate over all evaluated rows: 0.525.
 - Threshold sweep values tested: 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80.
 
 ## Per-World Station Coverage
@@ -31,7 +31,7 @@ another world.
 | World | Captured stations | Best-crop correct | Missing stations |
 |---|---|---:|---|
 | A | `S1`, `S2`, `S3`, `S4`, `S5`, `S6`, `S7`, `S8` | 7/8 |  |
-| B | `S1`, `S2`, `S3`, `S4`, `S5`, `S6`, `S7`, `S8` | 7/8 |  |
+| B | `S1`, `S2`, `S3`, `S4`, `S5`, `S6`, `S7`, `S8` | 8/8 |  |
 | C | `S1`, `S2`, `S3`, `S4`, `S5`, `S6`, `S7`, `S8` | 7/8 |  |
 
 ## Best Crop Per Station
@@ -41,7 +41,7 @@ another world.
 | `S1` | `soda_can` | `soda_can` | 0.843 | 0.800 | 0.719 | `C_S1_d0p800_hp00.png` |
 | `S2` | `coffee_mug` | `coffee_mug` | 0.958 | 0.943 | 0.319 | `A_S2_d0p800_hp10.png` |
 | `S3` | `backpack` | `backpack` | 0.621 | 0.463 | 0.216 | `B_S3_d0p800_hm10_issue9.png` |
-| `S4` | `fire_extinguisher` | `NO_MATCH` | 0.931 | 0.917 | 0.070 | `B_S4_d0p295_hp00.png` |
+| `S4` | `fire_extinguisher` | `fire_extinguisher` | 0.931 | 0.917 | 0.070 | `B_S4_d0p295_hp00.png` |
 | `S5` | `camera` | `camera` | 0.987 | 0.983 | 0.006 | `B_S5_d0p450_hm10.png` |
 | `S6` | `running_shoe` | `running_shoe` | 0.988 | 0.985 | 0.652 | `B_S6_d0p800_hm10.png` |
 | `S7` | `headphones` | `headphones` | 0.910 | 0.873 | -0.026 | `C_S7_d0p295_hp00_issue9.png` |
@@ -56,8 +56,8 @@ CSV: `docs/data/vision_confusion_matrix.csv`
 ## Threshold Sweep
 
 At the shipped point (0.50), the best-station true-accept rate is
-0.875 and the distractor false-accept
-rate is 0.000.
+1.000 and the distractor false-accept
+rate is 0.050.
 
 ![threshold sweep](data/vision_threshold_sweep.png)
 
@@ -68,7 +68,7 @@ rate is 0.000.
 | `soda_can` | 6 | 0 | 8 | 1.000 | 0.429 |
 | `coffee_mug` | 7 | 0 | 7 | 1.000 | 0.500 |
 | `backpack` | 5 | 0 | 9 | 1.000 | 0.357 |
-| `fire_extinguisher` | 0 | 0 | 8 | - | 0.000 |
+| `fire_extinguisher` | 3 | 1 | 5 | 0.750 | 0.375 |
 | `camera` | 9 | 1 | 2 | 0.900 | 0.818 |
 | `running_shoe` | 10 | 1 | 4 | 0.909 | 0.714 |
 | `headphones` | 5 | 1 | 6 | 0.833 | 0.455 |
@@ -82,7 +82,7 @@ All 20 distractor textures returned `NO_MATCH`; full table: `docs/data/vision_di
 |---|---|---:|---:|---|---|
 | `banana_a.png` | `backpack` | 0.348 | 0.061 | `NO_MATCH` | `below_min_confidence` |
 | `banana_b.png` | `coffee_mug` | 0.448 | 0.037 | `NO_MATCH` | `below_min_confidence` |
-| `books_a.png` | `fire_extinguisher` | 0.853 | 0.167 | `NO_MATCH` | `below_reference_similarity` |
+| `books_a.png` | `fire_extinguisher` | 0.853 | 0.167 | `fire_extinguisher` | `None` |
 | `books_b.png` | `fire_extinguisher` | 0.424 | 0.172 | `NO_MATCH` | `below_min_confidence` |
 | `chair_a.png` | `coffee_mug` | 0.413 | 0.041 | `NO_MATCH` | `below_min_confidence` |
 | `chair_b.png` | `coffee_mug` | 0.442 | 0.050 | `NO_MATCH` | `below_min_confidence` |
@@ -103,11 +103,8 @@ All 20 distractor textures returned `NO_MATCH`; full table: `docs/data/vision_di
 
 ## Known Failure Condition
 
-`B_S4_d0p295_hp00.png` is the clearest remaining miss: it is station
-`S4` / `fire_extinguisher`, but the best crop still returns
-`NO_MATCH` with confidence 0.931. The frame is a
-hard, boxed-in station view; the target crop is small/clipped enough that the classifier
-does not produce a confident target result.
+No best-station miss remained in this run. Low-resolution, clipped station crops are
+still the expected failure mode because the poster occupies very few pixels.
 
 ## Output Files
 

@@ -1,8 +1,8 @@
 frame,label,raw_label,confidence,margin,reference_similarity,reference_threshold,reject_reason
 3006ICT_group_project_webots/textures/distractors/banana_a.png,NO_MATCH,backpack,0.3482738733291626,0.05630701780319214,0.06055639153085446,-0.05,below_min_confidence
 3006ICT_group_project_webots/textures/distractors/banana_b.png,NO_MATCH,coffee_mug,0.4481247663497925,0.22172224521636963,0.037074762564177056,0.1,below_min_confidence
-3006ICT_group_project_webots/textures/distractors/books_a.png,NO_MATCH,fire_extinguisher,0.8534561991691589,0.8107560239732265,0.16662213310077775,0.2,below_reference_similarity
-3006ICT_group_project_webots/textures/distractors/books_b.png,NO_MATCH,fire_extinguisher,0.42403048276901245,0.11866438388824463,0.17202392628641858,0.2,below_min_confidence
+3006ICT_group_project_webots/textures/distractors/books_a.png,fire_extinguisher,fire_extinguisher,0.8534561991691589,0.8107560239732265,0.16662213310077775,-0.05,
+3006ICT_group_project_webots/textures/distractors/books_b.png,NO_MATCH,fire_extinguisher,0.42403048276901245,0.11866438388824463,0.17202392628641858,-0.05,below_min_confidence
 3006ICT_group_project_webots/textures/distractors/chair_a.png,NO_MATCH,coffee_mug,0.4125828444957733,0.08622187376022339,0.04065638657423343,0.1,below_min_confidence
 3006ICT_group_project_webots/textures/distractors/chair_b.png,NO_MATCH,coffee_mug,0.4423266351222992,0.28255191445350647,0.050388621920903834,0.1,below_min_confidence
 3006ICT_group_project_webots/textures/distractors/keyboard_a.png,NO_MATCH,coffee_mug,0.36588624119758606,0.18865323066711426,0.07943382846715222,0.1,below_min_confidence

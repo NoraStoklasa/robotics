@@ -2,9 +2,9 @@ truth\predicted,soda_can,coffee_mug,backpack,fire_extinguisher,camera,running_sh
 soda_can,6,0,0,0,1,0,0,0,7
 coffee_mug,0,7,0,0,0,1,0,0,6
 backpack,0,0,5,0,0,0,0,0,9
-fire_extinguisher,0,0,0,0,0,0,0,0,8
+fire_extinguisher,0,0,0,3,0,0,0,0,5
 camera,0,0,0,0,9,0,0,0,2
 running_shoe,0,0,0,0,0,10,0,0,4
 headphones,0,0,0,0,0,0,5,0,6
 wall_clock,0,0,0,0,0,0,1,8,5
-DISTRACTOR,0,0,0,0,0,0,0,0,20
+DISTRACTOR,0,0,0,1,0,0,0,0,19

@@ -41,11 +41,11 @@ B,S1,soda_can,soda_can,soda_can,0.8113017678260803,fire_extinguisher,0.053135536
 B,S2,coffee_mug,coffee_mug,coffee_mug,0.8740715384483337,camera,0.03693327307701111,0.8371382653713226,0.2004173155936645,0.1,,0.8,10,docs/data/vision_eval_captures/B/B_S2_d0p800_hp10_issue9.png
 B,S3,backpack,backpack,backpack,0.6211859583854675,camera,0.1586853712797165,0.46250058710575104,0.21554522269812654,-0.05,,0.8,-10,docs/data/vision_eval_captures/B/B_S3_d0p800_hm10_issue9.png
 B,S4,fire_extinguisher,NO_MATCH,NO_MATCH,0.0,NO_MATCH,0.0,0.0,0.0,,no_crop,0.295,-10,docs/data/vision_eval_captures/B/B_S4_d0p295_hm10.png
-B,S4,fire_extinguisher,NO_MATCH,fire_extinguisher,0.931407630443573,backpack,0.014895508997142315,0.9165121214464307,0.06987547476002473,0.2,below_reference_similarity,0.295,0,docs/data/vision_eval_captures/B/B_S4_d0p295_hp00.png
+B,S4,fire_extinguisher,fire_extinguisher,fire_extinguisher,0.931407630443573,backpack,0.014895508997142315,0.9165121214464307,0.06987547476002473,-0.05,,0.295,0,docs/data/vision_eval_captures/B/B_S4_d0p295_hp00.png
 B,S4,fire_extinguisher,NO_MATCH,NO_MATCH,0.0,NO_MATCH,0.0,0.0,0.0,,no_crop,0.295,10,docs/data/vision_eval_captures/B/B_S4_d0p295_hp10.png
 B,S4,fire_extinguisher,NO_MATCH,camera,0.2569013237953186,coffee_mug,0.1955861896276474,0.061315134167671204,0.3400612827089111,-0.05,below_min_confidence,0.42,-10,docs/data/vision_eval_captures/B/B_S4_d0p420_hm10.png
-B,S4,fire_extinguisher,NO_MATCH,fire_extinguisher,0.698087215423584,camera,0.07692626118659973,0.6211609542369843,-0.000696570970240595,0.2,below_reference_similarity,0.42,0,docs/data/vision_eval_captures/B/B_S4_d0p420_hp00.png
-B,S4,fire_extinguisher,NO_MATCH,fire_extinguisher,0.615297257900238,backpack,0.09617635607719421,0.5191209018230438,0.1435726865766147,0.2,below_reference_similarity,0.42,10,docs/data/vision_eval_captures/B/B_S4_d0p420_hp10.png
+B,S4,fire_extinguisher,fire_extinguisher,fire_extinguisher,0.698087215423584,camera,0.07692626118659973,0.6211609542369843,-0.000696570970240595,-0.05,,0.42,0,docs/data/vision_eval_captures/B/B_S4_d0p420_hp00.png
+B,S4,fire_extinguisher,fire_extinguisher,fire_extinguisher,0.615297257900238,backpack,0.09617635607719421,0.5191209018230438,0.1435726865766147,-0.05,,0.42,10,docs/data/vision_eval_captures/B/B_S4_d0p420_hp10.png
 B,S5,camera,NO_MATCH,camera,0.7444269061088562,headphones,0.1136685237288475,0.6307583823800087,-0.06038052827885325,-0.05,below_reference_similarity,0.295,-10,docs/data/vision_eval_captures/B/B_S5_d0p295_hm10.png
 B,S5,camera,camera,camera,0.9183679819107056,headphones,0.043971311300992966,0.8743966706097126,-0.030433182952916398,-0.05,,0.295,0,docs/data/vision_eval_captures/B/B_S5_d0p295_hp00.png
 B,S5,camera,NO_MATCH,camera,0.7986335754394531,headphones,0.11088815331459045,0.6877454221248627,-0.05641596668906876,-0.05,below_reference_similarity,0.295,10,docs/data/vision_eval_captures/B/B_S5_d0p295_hp10.png
