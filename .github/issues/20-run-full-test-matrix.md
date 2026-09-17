@@ -26,14 +26,21 @@ Experimental evaluation, results and discussion (8 marks); Project complexity an
 - Record the test dimensions separately so the results table can be read by dimension, not only as one success rate: start pose (world), target label, and station type (boundary versus interior pocket).
 
 ## Acceptance criteria
-- [ ] The matrix covers all three official worlds and at least 6 target labels spanning both boundary and interior stations, with every run recorded in a committed CSV under `docs/data/`.
-- [ ] The borderline target is run at least twice per world to check consistency, and both runs appear in the results.
-- [ ] Success rate and mean completion time are reported per world and overall.
-- [ ] Every run's completion time is compared against the 240 second budget, and any overrun is listed.
-- [ ] No run required a controller edit.
+**Rescoped again 2026-09-17**, this time by the user's own explicit choice while running the matrix by
+hand (not a brief-driven change like the 2026-09-16 rescope above): rather than 6 targets, **all 8
+targets were run once in each of the 3 worlds** (24 runs), plus the already-completed `soda_can`/World A
+run happened to be repeated twice before this decision was made, which is kept as the matrix's
+repeated-run evidence = **25 runs total**. All 25 completed 2026-09-17: 25/25 SUCCESS, 0 collisions, 0
+budget overruns, 0 void runs — see `docs/results_matrix.md` and `docs/data/results_matrix.csv`.
 
-- [ ] Every recorded run states that it completed without intervention; any run that was touched is marked void and repeated.
-- [ ] Success rate is broken down by start pose (world) and by boundary-versus-interior station, not reported only as one aggregate.
+- [x] The matrix covers all three official worlds and at least 6 target labels spanning both boundary and interior stations, with every run recorded in a committed CSV under `docs/data/`. — exceeded: all 8 targets, not just 6.
+- [ ] The borderline target is run at least twice per world to check consistency, and both runs appear in the results. — **not satisfied as literally worded**: the repeat that exists is `soda_can` (a clean, non-borderline target) run twice, and only in World A, not the borderline target (`wall_clock`) repeated across all three worlds as originally planned. The user chose the all-8-targets-once-per-world approach after learning the simulation is fully deterministic, which makes a same-cell repeat much lower-value evidence than originally assumed. If a literal borderline-target repeat is still wanted for the report, it would need `wall_clock` re-run once more in each of the three worlds (3 extra runs).
+- [x] Success rate and mean completion time are reported per world and overall.
+- [x] Every run's completion time is compared against the 240 second budget, and any overrun is listed. (none over budget)
+- [x] No run required a controller edit. (hash `c2757b9b045cccaa7e2ecad8823e52628d3428b7615fe34a1508385d7465e701` unchanged throughout)
+
+- [x] Every recorded run states that it completed without intervention; any run that was touched is marked void and repeated. (0 void runs — all 25 intervention-free)
+- [x] Success rate is broken down by start pose (world) and by boundary-versus-interior station, not reported only as one aggregate.
 
 ## Evidence for the report
 `docs/results_matrix.md` and its CSV — the main results table of the evaluation chapter, plus a completion-time bar chart per world.
