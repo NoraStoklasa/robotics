@@ -35,8 +35,22 @@ cross-checked with a real Webots run (below).
 
 Nearest-first beats or matches the fixed sweep from every start tested. The worst-case start for
 nearest-first is **A** at an estimated **155.0 s**, comfortably under the
-240 s (4:00) mission budget (criterion 4) -- see `docs/decision_visit_order.md`'s
-real-Webots cross-check for a measured, not just estimated, figure.
+240 s (4:00) mission budget (criterion 4).
+
+## Real Webots measurement for the worst-case start (criterion 4)
+
+The cell-count estimate above ignores per-corner turning time, so the worst case (start A) was run
+for real in Webots, calling `next_station` live after each visit rather than pre-computing the tour:
+
+```
+visit order      = ['S8', 'S2', 'S4', 'S6', 'S5', 'S3', 'S1', 'S7']
+total sim. time  = 173.8 s   (budget: 240.0 s)
+```
+
+The visit order matches the computed prediction exactly. The measured time (173.8 s) is about 19 s
+higher than the 155.0 s cell-count estimate -- consistent with the turning overhead at each of the 8
+stops that the straight-line estimate deliberately excludes. Either way, all 8 stations are visited
+with **66 s of margin** under the 4:00 budget.
 
 ## Decision
 

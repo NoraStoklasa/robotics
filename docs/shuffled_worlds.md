@@ -77,29 +77,52 @@ poster in that shuffled world, within 0.20 m of that station's `observe` positio
 
 ## Results
 
-| World | Target | Its station here | Its station in training | Result | Distance to observe | Notes |
-|---|---|---|---|---|---|---|
-| A | soda_can | S2 | S1 | **Pass** | 0.068 m | Station differs from training -- direct proof no fixed mapping is relied on |
-| A | running_shoe | S7 | S6 | **Pass** | 0.020 m | |
-| B | soda_can | S8 | S1 | **Pass** | 0.010 m | Same label as row 1, correctly found at a *different* new station in a *different* world |
-| A | camera | S6 | S5 | Fail (`FAILED`, all 8 visited) | -- | Model did recognise `camera` at S6 with real confidence (0.76, 0.75, 0.69 on 3 separate frames) but never got 3 *consecutive* agreeing frames -- see `docs/failure_log.md` |
-| B | backpack | S6 | S3 | Fail (`FAILED`, all 8 visited) | -- | Confidence stuck at 0.24-0.35 at S6, never seriously matched `backpack` -- looks like a pre-existing per-class/per-station accuracy gap, not a shuffling artefact |
-| C | wall_clock | S7 | S8 | Fail (`FAILED`, all 8 visited) | -- | Confidence flat at 0.00 across all 12 frames -- suspected poster-crop failure at this station/world's approach geometry, not yet root-caused |
-| A | wall_clock | S1 | S8 | Fail (`FAILED`, all 8 visited) | -- | Confidence 0.24-0.36 even at S1, the most heavily calibrated/tested station in the project -- points to `wall_clock` being a weak class generally |
-| C | soda_can | S2 | S1 | Fail (`FAILED`, all 8 visited) | -- | Confidence stuck at 0.25-0.26, well below the level `soda_can` reached cleanly in worlds A and B -- points to world C's approach geometry into S2 being the weak factor, not the target label |
+**Re-run in full on 2026-09-17** after the `camera` reference-similarity floor was added
+(`docs/decision_log.md`). Method unchanged from the section above: `config/assessment_mission.json` set to
+the target under test, the named world launched headlessly, the printed `MISSION:` trace read; no
+controller edit between runs, and `assessment_mission.json` was restored to its original value afterwards.
+A run passes if it reaches `MISSION: FINAL STOP` at the station that actually carries the target's poster
+in that shuffled world, within 0.20 m of that station's `observe` position.
 
-3 of 8 runs reached `FINAL STOP` at the correct new station within tolerance. All three acceptance
-criteria that a *passing* run can prove are satisfied by the three passes above:
+| World | Target | Its station here | Its station in training | Result | Distance to observe | Completion time | Stations inspected | Previous result (pre-2026-09-17) |
+|---|---|---|---|---|---|---|---|---|
+| A | soda_can | S2 | S1 | **Pass** | 0.099 m | 32.58 s | 2 | Pass (0.068 m) |
+| A | running_shoe | S7 | S6 | **Pass** | 0.099 m | 191.52 s | 8 | Pass (0.020 m) |
+| B | soda_can | S8 | S1 | **Pass** | 0.098 m | 53.63 s | 2 | Pass (0.010 m) |
+| A | camera | S6 | S5 | **Pass** | 0.018 m | 57.28 s | 3 | **Fail** (correct label at 0.76/0.75/0.69, never 3 agreeing frames) |
+| B | backpack | S6 | S3 | **Pass** | 0.098 m | 88.35 s | 4 | **Fail** (confidence stuck 0.24-0.35) |
+| C | wall_clock | S7 | S8 | **Pass** | 0.099 m | 147.84 s | 7 | **Fail** (confidence flat 0.00 across 12 frames) |
+| A | wall_clock | S1 | S8 | **Pass** | 0.097 m | 150.88 s | 7 | **Fail** (confidence 0.24-0.36 even at S1) |
+| C | soda_can | S2 | S1 | **Pass** | 0.070 m | 109.06 s | 5 | **Fail** (confidence stuck 0.25-0.26) |
 
-- At least three shuffled worlds exist under `test_worlds/`, at least one a full derangement (all three
-  are).
-- The official worlds are untouched (only three `TexturedBarrier.textureUrl` lines differ per copy;
-  diffed by hand against `worlds/`).
-- At least one run used a target whose station differs from its training-world station and still
-  succeeded (all three passing runs qualify; e.g. `soda_can` moved from S1 to S2 in world A and from S1
-  to S8 in world B, and both were found correctly).
+**8 of 8 runs now pass, up from 3 of 8.** Every run finished inside the 240 s budget (worst 191.52 s) and
+well inside the 0.20 m tolerance (worst 0.099 m). All three acceptance criteria are still satisfied, and
+now by every row rather than three of them: at least three shuffled worlds exist under `test_worlds/` (all
+three are full derangements), the official worlds are untouched, and every run used a target whose station
+differs from its training-world station.
 
-## What the failures actually show
+### What changed between the two sets of runs
+
+Several things changed between the original runs and this re-run, so **the recovery cannot be attributed
+to any single fix** — do not claim in the report that the `camera` floor fixed these five:
+
+- The `camera` per-label reference-similarity floor (2026-09-17, `docs/decision_log.md`). This directly
+  explains the `test_start_B` / `headphones` case in `docs/failure_log.md`, but only two of the five rows
+  above involve a `camera` prediction at all.
+- The consensus rule the original rows were written against was **3 consecutive agreeing frames**; the
+  current code uses **3 of the last 5** (`IDENTIFY_CONSENSUS_FRAMES` / `IDENTIFY_WINDOW_FRAMES`), which
+  tolerates an isolated bad frame. This most likely explains the `camera` @ S6 row, which originally
+  failed with the correct label at real confidence purely for want of a consecutive streak.
+- The retry-from-observe-pose path is doing visible work. In the `camera` @ S6 run, the backed-off
+  identify pose produced 20 frames of `NO_MATCH` at 0.00 confidence (i.e. `find_poster_region` found no
+  crop at all), and the retry from the closer observe pose then read `camera` at 0.95/0.95/0.96 and
+  confirmed on three frames. The same mechanism plausibly accounts for the two `wall_clock` rows, whose
+  original symptom was also flat 0.00 confidence.
+
+A clean attribution would need each fix re-tested in isolation against these eight pairs, which has not
+been done.
+
+## What the original failures showed (historical -- all eight now pass; kept as the record of what was investigated at the time)
 
 None of the five failed runs are shuffling bugs. In every case the robot correctly *visited* the right
 station (`PLAN`/`NAVIGATE` worked) and the identifier ran on real camera frames of the correct poster --

@@ -48,7 +48,7 @@ Record once per matrix session, before the first run:
 shasum -a 256 controllers/group_project_controller/group_project_controller.py
 ```
 
-Hash for this matrix run: `TODO`
+Hash for this matrix run: `c2757b9b045cccaa7e2ecad8823e52628d3428b7615fe34a1508385d7465e701` (as of 2026-09-17, after the readability pass and the Issue #20 print-banner additions — before starting the 48 runs, re-verify this hash matches and update it here if the controller changed since)
 
 If this changes mid-matrix, the matrix is invalid from that point on — stop
 and restart the whole matrix under the new hash.
