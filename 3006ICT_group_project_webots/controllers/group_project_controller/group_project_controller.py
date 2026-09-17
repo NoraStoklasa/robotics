@@ -9,7 +9,7 @@ Mission:
 import json
 import math
 import os
-from collections import Counter, deque
+# (no Counter/deque -- plain dicts and lists are used instead)
 
 import cv2
 import numpy as np
@@ -40,7 +40,11 @@ timestep = int(robot.getBasicTimeStep())
 left_motor = robot.getDevice("left wheel motor")
 right_motor = robot.getDevice("right wheel motor")
 camera = robot.getDevice("camera")
-ps = [robot.getDevice(f"ps{i}") for i in range(8)]
+# The e-puck's 8 proximity sensors are called ps0 ... ps7, so collect them
+# into one list we can loop over.
+ps = []
+for i in range(8):
+    ps.append(robot.getDevice(f"ps{i}"))
 gps = robot.getDevice("gps")
 imu = robot.getDevice("imu")
 
@@ -74,7 +78,12 @@ target = MISSION["target"]
 # plans a path that keeps a one-cell buffer everywhere except close to a
 # station's observe cell, where the raw geometry is restored so all 8 stay
 # reachable. Computed once here so every plan_path_to() call reuses it.
-STATION_OBSERVE_CELLS = [world_to_grid(*s["observe"]) for s in CONFIG["stations"]]
+# The grid cell each station is viewed from. Needed so selective inflation
+# knows which cells to leave alone.
+STATION_OBSERVE_CELLS = []
+for station in CONFIG["stations"]:
+    observe_x, observe_y = station["observe"]
+    STATION_OBSERVE_CELLS.append(world_to_grid(observe_x, observe_y))
 PLANNING_GRID = apply_clearance_policy(GRID, "selective", STATION_OBSERVE_CELLS, radius=4)
 
 # Waypoint-following constants (Issue #13), tuned in docs/control_tuning.md.
@@ -109,6 +118,9 @@ REPLAN_DISPLACEMENT = 0.15      # metres off the next waypoint that forces a ful
 # Provided low-level helpers
 # ------------------------------------------------------------------
 def set_speed(left, right):
+    # Every wheel command in the whole program goes through here, so the speed
+    # limit only has to be applied in one place. np.clip keeps the value
+    # between -MAX_SPEED and +MAX_SPEED.
     left = np.clip(left, -MAX_SPEED, MAX_SPEED)
     right = np.clip(right, -MAX_SPEED, MAX_SPEED)
     left_motor.setVelocity(float(left))
@@ -123,13 +135,39 @@ def get_pose():
 
 
 def camera_bgr():
+    # Webots hands us the camera image as raw bytes in BGRA order. Reshape it
+    # into a normal height x width x 4 image, then drop the alpha channel so
+    # OpenCV can work with it as an ordinary BGR picture.
     h, w = camera.getHeight(), camera.getWidth()
     image = np.frombuffer(camera.getImage(), np.uint8).reshape(h, w, 4)
     return cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
 
 
 def proximity_values():
-    return [sensor.getValue() for sensor in ps]
+    # Read all 8 proximity sensors and return them as a list, in ps0-ps7 order.
+    readings = []
+    for sensor in ps:
+        readings.append(sensor.getValue())
+    return readings
+
+
+# True if ANY of the listed sensors is reading above the threshold, i.e. at
+# least one of them can see something that close.
+def any_sensor_above(readings, sensor_indexes, threshold):
+    for i in sensor_indexes:
+        if readings[i] > threshold:
+            return True
+    return False
+
+
+# The biggest reading out of the listed sensors. Used to work out which side
+# an obstacle is on, so we know which way to turn away from it.
+def largest_reading(readings, sensor_indexes):
+    biggest = readings[sensor_indexes[0]]
+    for i in sensor_indexes:
+        if readings[i] > biggest:
+            biggest = readings[i]
+    return biggest
 
 
 # ------------------------------------------------------------------
@@ -191,7 +229,23 @@ def bearing_to(x, y):
     return normalise_angle(target_heading - yaw)
 
 
+# How far the robot still has to turn to be facing the way the station says
+# it should. Positive means turn left, negative means turn right.
+def yaw_error_to(station):
+    _, _, yaw = get_pose()
+    return normalise_angle(station["observe_yaw"] - yaw)
+
+
+# Spin on the spot in whichever direction closes that error.
+def rotate_towards_yaw(yaw_error):
+    if yaw_error > 0:
+        rotate_in_place(OBSERVE_TURN_SPEED)
+    else:
+        rotate_in_place(-OBSERVE_TURN_SPEED)
+
+
 def pose_to_cell():
+    # Which grid square the robot is standing in right now.
     px, py, _ = get_pose()
     return world_to_grid(px, py)
 
@@ -250,11 +304,16 @@ def plan_path_to(x_goal, y_goal):
     start_cell = pose_to_cell()
     goal_cell = world_to_grid(x_goal, y_goal)
     grid = PLANNING_GRID
+    # If our own cell reads as blocked, A* would refuse to start. We're
+    # physically standing there, so copy the grid and mark just that one cell
+    # free for this plan only -- the real grid is left untouched.
     if grid[start_cell] == 1:
         grid = grid.copy()
         grid[start_cell] = 0
     raw_path = astar(grid, start_cell, goal_cell)
     simplified = simplify_path(raw_path)
+    # [1:] drops the first waypoint, which is the cell we're already standing
+    # in -- no point driving to where we already are.
     waypoints = path_to_waypoints(simplified)[1:]
     return waypoints, raw_path
 
@@ -269,10 +328,16 @@ def follow_path(waypoints, base_speed=BASE_SPEED, kp=KP_HEADING):
     callers can log the true active target instead of assuming it never changes.
     """
     for wx, wy in waypoints:
+        # Keep steering at this waypoint until we're close enough to it.
         while distance_to(wx, wy) > WAYPOINT_TOLERANCE:
+            # P control: the further off we're pointing, the harder we turn.
             error = bearing_to(wx, wy)
             turn = kp * error
+            # Slow down when the heading error is big, so the robot turns
+            # roughly on the spot instead of driving off in a wide curve.
+            # max(0.3, ...) stops it slowing all the way to a standstill.
             speed = base_speed * max(0.3, 1.0 - abs(error) / math.pi)
+            # One wheel faster than the other = turn while driving.
             set_speed(speed - turn, speed + turn)
             yield (wx, wy)
     stop()
@@ -281,6 +346,21 @@ def follow_path(waypoints, base_speed=BASE_SPEED, kp=KP_HEADING):
 # ------------------------------------------------------------------
 # Reactive avoidance with recovery (Issue #14)
 # ------------------------------------------------------------------
+# Which way to turn to get away from an obstacle. If only one side can see
+# it, turn away from that side. If both can, turn away from whichever side is
+# reading closest. Used by both the WARN (AVOID) and STOP responses.
+def turn_away_direction(readings, left_triggered, right_triggered):
+    if left_triggered and not right_triggered:
+        return "right"
+    if right_triggered and not left_triggered:
+        return "left"
+    left_max = largest_reading(readings, FRONT_LEFT_PS)
+    right_max = largest_reading(readings, FRONT_RIGHT_PS)
+    if left_max >= right_max:
+        return "right"
+    return "left"
+
+
 def select_behaviour(left_warn, right_warn, left_stop, right_stop, has_path):
     """Workshop 8 priority, one function: Safety > Path following > Search."""
     if left_stop or right_stop:
@@ -309,10 +389,13 @@ class Navigator:
         self.sub_step = 0
         self.stop_turn_dir = None
         self.last_behaviour = None
-        self.pos_history = deque(maxlen=STUCK_WINDOW_STEPS)
+        # The last STUCK_WINDOW_STEPS positions, oldest first. Used to notice
+        # the robot has stopped making progress.
+        self.pos_history = []
         self.step_count = 0
         self.behaviour_log = []
 
+    # True once the robot has arrived at its goal.
     def done(self):
         return self.state == "DONE"
 
@@ -324,11 +407,15 @@ class Navigator:
             print(f"BEHAVIOUR step={self.step_count} -> {behaviour} {detail}".rstrip())
             self.last_behaviour = behaviour
 
+    # The point we're currently steering at: the next waypoint if there is
+    # one, otherwise the final goal.
     def _current_target(self):
         if self.wp_index < len(self.waypoints):
             return self.waypoints[self.wp_index]
         return self.goal_x, self.goal_y
 
+    # Ask A* for a fresh path from wherever we are now, and pick the state to
+    # go into based on what came back.
     def _replan(self, reason):
         self.waypoints, raw_path = plan_path_to(self.goal_x, self.goal_y)
         self.wp_index = 0
@@ -343,8 +430,11 @@ class Navigator:
             self._log("REPLAN", reason)
             self.state = "FOLLOW"
 
+    # One step of ordinary path following: same P control as follow_path,
+    # but written so it can be called once per control step.
     def _drive_to_waypoint(self):
         wx, wy = self._current_target()
+        # Close enough to this waypoint, so move on to the next one.
         if distance_to(wx, wy) <= WAYPOINT_TOLERANCE:
             self.wp_index += 1
             if self.wp_index >= len(self.waypoints):
@@ -357,10 +447,16 @@ class Navigator:
         speed = BASE_SPEED * max(0.3, 1.0 - abs(error) / math.pi)
         set_speed(speed - turn, speed + turn)
 
+    # Called once per control step. Works through the states in priority
+    # order: recovery first, then obstacle reactions, then path following.
     def step(self):
         self.step_count += 1
         x, y, _ = get_pose()
+        # Remember where we are, and drop the oldest entry so the list only
+        # ever holds the last STUCK_WINDOW_STEPS positions.
         self.pos_history.append((x, y))
+        if len(self.pos_history) > STUCK_WINDOW_STEPS:
+            self.pos_history.pop(0)
 
         if self.state == "DONE":
             stop()
@@ -371,13 +467,15 @@ class Navigator:
 
         # Stuck detector: runs in every state except while a recovery is
         # already under way, so it can break an endless STOP/AVOID cycle too.
-        if self.state not in ("RECOVER_BACKOFF", "RECOVER_ROTATE") and len(self.pos_history) == self.pos_history.maxlen:
+        if self.state not in ("RECOVER_BACKOFF", "RECOVER_ROTATE") and len(self.pos_history) == STUCK_WINDOW_STEPS:
+            # Compare where we are now with where we were a full window ago.
+            # Barely moved in all that time means we are stuck on something.
             x0, y0 = self.pos_history[0]
             if math.hypot(x - x0, y - y0) < STUCK_MIN_DISPLACEMENT:
                 self._log("STUCK_RECOVERY", f"moved <{STUCK_MIN_DISPLACEMENT} m over {STUCK_WINDOW_STEPS} steps")
                 self.state = "RECOVER_BACKOFF"
                 self.sub_step = 0
-                self.pos_history.clear()
+                self.pos_history = []
 
         if self.state == "RECOVER_BACKOFF":
             self._log("RECOVER_BACKOFF")
@@ -393,7 +491,7 @@ class Navigator:
             set_speed(-RECOVERY_SPEED, RECOVERY_SPEED)
             self.sub_step += 1
             if self.sub_step >= RECOVERY_ROTATE_STEPS:
-                self.pos_history.clear()
+                self.pos_history = []
                 self._replan("post-recovery replan")
             return
 
@@ -422,41 +520,31 @@ class Navigator:
                 self._replan("search retry")
             return
 
+        # Read the sensors and work out, for each side, whether something is
+        # merely close (WARN) or about to be hit (STOP).
         ps_values = proximity_values()
-        left_warn = any(ps_values[i] > WARN for i in FRONT_LEFT_PS)
-        right_warn = any(ps_values[i] > WARN for i in FRONT_RIGHT_PS)
-        left_stop = any(ps_values[i] > STOP for i in FRONT_LEFT_PS)
-        right_stop = any(ps_values[i] > STOP for i in FRONT_RIGHT_PS)
+        left_warn = any_sensor_above(ps_values, FRONT_LEFT_PS, WARN)
+        right_warn = any_sensor_above(ps_values, FRONT_RIGHT_PS, WARN)
+        left_stop = any_sensor_above(ps_values, FRONT_LEFT_PS, STOP)
+        right_stop = any_sensor_above(ps_values, FRONT_RIGHT_PS, STOP)
         behaviour = select_behaviour(left_warn, right_warn, left_stop, right_stop, has_path=bool(self.waypoints))
 
         if behaviour == "STOP":
             self._log("STOP", f"left={left_stop} right={right_stop}")
             stop()
-            if left_stop and not right_stop:
-                self.stop_turn_dir = "right"    # turn away from the left obstacle
-            elif right_stop and not left_stop:
-                self.stop_turn_dir = "left"     # turn away from the right obstacle
-            else:
-                left_max = max(ps_values[i] for i in FRONT_LEFT_PS)
-                right_max = max(ps_values[i] for i in FRONT_RIGHT_PS)
-                self.stop_turn_dir = "right" if left_max >= right_max else "left"
+            # Remember which way to spin; STOP_ROTATE does the spinning.
+            self.stop_turn_dir = turn_away_direction(ps_values, left_stop, right_stop)
             self.state = "STOP_ROTATE"
             self.sub_step = 0
             return
 
         if behaviour == "AVOID":
             self._log("AVOID", f"left={left_warn} right={right_warn}")
-            if left_warn and not right_warn:
-                set_speed(AVOID_TURN_SPEED, -AVOID_TURN_SPEED)     # turn away from the left obstacle
-            elif right_warn and not left_warn:
-                set_speed(-AVOID_TURN_SPEED, AVOID_TURN_SPEED)     # turn away from the right obstacle
+            # Steer away from the obstacle straight away, no separate state.
+            if turn_away_direction(ps_values, left_warn, right_warn) == "right":
+                set_speed(AVOID_TURN_SPEED, -AVOID_TURN_SPEED)
             else:
-                left_max = max(ps_values[i] for i in FRONT_LEFT_PS)
-                right_max = max(ps_values[i] for i in FRONT_RIGHT_PS)
-                if left_max >= right_max:
-                    set_speed(AVOID_TURN_SPEED, -AVOID_TURN_SPEED)
-                else:
-                    set_speed(-AVOID_TURN_SPEED, AVOID_TURN_SPEED)
+                set_speed(-AVOID_TURN_SPEED, AVOID_TURN_SPEED)
             return
 
         if behaviour == "SEARCH":
@@ -585,7 +673,8 @@ class Mission:
         self.last_label = None
         self.last_confidence = 0.0
         self.consensus_count = 0
-        self.label_window = deque(maxlen=IDENTIFY_WINDOW_FRAMES)
+        # The labels from the last few camera frames, oldest first.
+        self.label_window = []
         self.identify_from_observe = False
         self.final_align_steps = 0
         self.final_hold_steps = 0
@@ -613,6 +702,7 @@ class Mission:
             f"budget={TIME_BUDGET:.0f}s =====\n"
         )
 
+    # True once the mission has finished, either way.
     def done(self):
         return self.state in ("STOP", "FAILED")
 
@@ -623,15 +713,25 @@ class Mission:
             print(f"MISSION: state={self.state} {detail}".rstrip())
             self._last_logged_state = self.state
 
+    # Give up on this station and go back to PLAN to choose another one.
     def _skip_current_station(self, reason):
         print(f"MISSION: {reason}, marking {self.station['id']} visited")
         self.stations_inspected += 1
-        self.unvisited = [s for s in self.unvisited if s["id"] != self.station["id"]]
+        # Rebuild the unvisited list without this station, so PLAN doesn't
+        # send us straight back to it.
+        still_unvisited = []
+        for s in self.unvisited:
+            if s["id"] != self.station["id"]:
+                still_unvisited.append(s)
+        self.unvisited = still_unvisited
         self.state = "PLAN"
 
+    # How many simulated seconds the mission has been running for.
     def _elapsed_time(self):
         return robot.getTime() - self.mission_start_time
 
+    # Print a warning as we pass 50%, 75% and 90% of the time budget, and
+    # fail the mission outright once the whole budget is gone.
     def _check_time_budget(self):
         fraction = self._elapsed_time() / TIME_BUDGET
         for warn_fraction in BUDGET_WARN_FRACTIONS:
@@ -667,7 +767,8 @@ class Mission:
             f"committing to {self.station['id']} (confidence={self.best_candidate['confidence']:.2f}) "
             "instead of continuing the current station visit or inspecting others"
         )
-        self.nav = Navigator(*self.station["observe"])
+        observe_x, observe_y = self.station["observe"]
+        self.nav = Navigator(observe_x, observe_y)
         self.nav_steps = 0
         self.state = "GOTO_OBSERVE"
 
@@ -686,34 +787,60 @@ class Mission:
         if self.telemetry_step_count % TELEMETRY_LOG_INTERVAL_STEPS != 0:
             return
         x, y, yaw = get_pose()
-        behaviour = self.nav.last_behaviour if self.nav is not None else ""
+        # There is no Navigator yet during the very first PLAN step.
+        if self.nav is not None:
+            behaviour = self.nav.last_behaviour
+        else:
+            behaviour = ""
+        if self.station:
+            station_id = self.station["id"]
+        else:
+            station_id = ""
         self.telemetry.log_step(
             sim_time=round(self._elapsed_time(), 3),
             state=self.state,
             x=round(x, 3),
             y=round(y, 3),
             yaw=round(yaw, 3),
-            station=self.station["id"] if self.station else "",
+            station=station_id,
             label=self.last_label or "",
             confidence=round(self.last_confidence, 3),
             behaviour=behaviour or "",
-            max_proximity=round(max(proximity_values()), 1),
+            max_proximity=round(largest_reading(proximity_values(), (0, 1, 2, 3, 4, 5, 6, 7)), 1),
         )
 
     def _finish(self):
         if self._finished:
             return
         self._finished = True
-        outcome = self.outcome or ("SUCCESS" if self.state == "STOP" else "FAILED")
+        # self.outcome is only ever set for a timeout. Otherwise the mission
+        # succeeded if it ended in the STOP state, and failed if it didn't.
+        if self.outcome:
+            outcome = self.outcome
+        else:
+            if self.state == "STOP":
+                outcome = "SUCCESS"
+            else:
+                outcome = "FAILED"
         elapsed = self._elapsed_time()
         collision_flag = self.max_proximity_seen > STOP
         over_budget = elapsed > TIME_BUDGET
+        # Work these out first so the printing below stays readable.
+        if self.station:
+            station_id = self.station["id"]
+        else:
+            station_id = ""
+        if self.final_distance is not None:
+            distance_text = f"{self.final_distance:.3f}"
+        else:
+            distance_text = ""
+
         if self.telemetry is not None:
             self.telemetry.log_summary(
                 start_id=self.start_id,
                 target=target,
-                station=self.station["id"] if self.station else "",
-                final_distance=f"{self.final_distance:.3f}" if self.final_distance is not None else "",
+                station=station_id,
+                final_distance=distance_text,
                 completion_time=f"{elapsed:.2f}",
                 outcome=outcome,
             )
@@ -721,20 +848,45 @@ class Mission:
         # Issue #20 matrix runs: everything a run row in results_matrix.csv
         # needs, printed as one unmissable block so a failed/void run is
         # obvious at a glance in the Webots console without opening the CSVs.
-        result_icon = "PASS" if outcome == "SUCCESS" else "FAIL"
+        # Build each bit of text separately, then print it all at the end.
+        if outcome == "SUCCESS":
+            result_icon = "PASS"
+        else:
+            result_icon = "FAIL"
+
+        if self.station:
+            station_text = self.station["id"]
+        else:
+            station_text = "none"
+
+        if self.final_distance is not None:
+            distance_line = f"{self.final_distance:.3f}"
+        else:
+            distance_line = "n/a"
+
+        if over_budget:
+            budget_warning = "  *** OVER 240s BUDGET ***"
+        else:
+            budget_warning = ""
+
+        if collision_flag:
+            collision_warning = "  *** COLLISION (above STOP threshold) ***"
+        else:
+            collision_warning = ""
+
         print(
             "\n===== MISSION RESULT: "
             f"{result_icon} =====\n"
             f"  outcome:              {outcome}\n"
             f"  start_pose:           {self.start_id}\n"
             f"  target:               {target}\n"
-            f"  station_reached:      {self.station['id'] if self.station else 'none'}\n"
-            f"  final_distance_m:     {f'{self.final_distance:.3f}' if self.final_distance is not None else 'n/a'}\n"
+            f"  station_reached:      {station_text}\n"
+            f"  final_distance_m:     {distance_line}\n"
             f"  completion_time_s:    {elapsed:.2f}"
-            f"{'  *** OVER 240s BUDGET ***' if over_budget else ''}\n"
+            f"{budget_warning}\n"
             f"  stations_inspected:   {self.stations_inspected}\n"
             f"  max_proximity:        {self.max_proximity_seen:.1f}"
-            f"{'  *** COLLISION (above STOP threshold) ***' if collision_flag else ''}\n"
+            f"{collision_warning}\n"
             "===========================================\n"
         )
 
@@ -742,7 +894,11 @@ class Mission:
         self._check_time_budget()
         self._check_degraded_mode()
         self._log_telemetry_row()
-        self.max_proximity_seen = max(self.max_proximity_seen, max(proximity_values()))
+        # Keep track of the closest we ever got to anything, for the report's
+        # "did this run collide?" column.
+        closest_now = largest_reading(proximity_values(), (0, 1, 2, 3, 4, 5, 6, 7))
+        if closest_now > self.max_proximity_seen:
+            self.max_proximity_seen = closest_now
         if self.state == "PLAN":
             self._plan()
         elif self.state == "NAVIGATE":
@@ -762,6 +918,7 @@ class Mission:
         if self.done():
             self._finish()
 
+    # PLAN: pick the cheapest unvisited station to go and look at next.
     def _plan(self):
         if not self.unvisited:
             self.state = "FAILED"
@@ -781,6 +938,7 @@ class Mission:
         self.nav_steps = 0
         self.state = "NAVIGATE"
 
+    # NAVIGATE: let the Navigator drive us to the identify pose.
     def _navigate(self):
         self._log(f"station={self.station['id']} final_observe={self.station['observe']}")
         self.nav.step()
@@ -792,20 +950,21 @@ class Mission:
         elif self.nav_steps >= NAVIGATE_STEP_BUDGET:
             self._skip_current_station(f"NAVIGATE failed to reach {self.station['id']} within the step budget")
 
+    # OBSERVE: turn on the spot to face the poster, then sit still for a
+    # moment so the camera image isn't blurred by movement.
     def _observe(self):
         self._log(f"station={self.station['id']}")
         # Reaching the observe (x, y) says nothing about which way the robot
         # is facing -- Navigator only cares about position. Rotate to the
         # station's observe_yaw before the camera can be trusted; only start
         # the settle countdown once heading is actually aligned.
-        _, _, yaw = get_pose()
-        yaw_error = normalise_angle(self.station["observe_yaw"] - yaw)
+        yaw_error = yaw_error_to(self.station)
         if abs(yaw_error) > OBSERVE_YAW_TOLERANCE:
             self.yaw_align_steps += 1
             if self.yaw_align_steps >= OBSERVE_YAW_STEP_BUDGET:
                 self._skip_current_station(f"OBSERVE failed to align heading at {self.station['id']} within the step budget")
                 return
-            rotate_in_place(OBSERVE_TURN_SPEED if yaw_error > 0 else -OBSERVE_TURN_SPEED)
+            rotate_towards_yaw(yaw_error)
             self.settle_steps = 0
             return
 
@@ -815,9 +974,11 @@ class Mission:
             self.identify_frames = 0
             self.last_label = None
             self.consensus_count = 0
-            self.label_window = deque(maxlen=IDENTIFY_WINDOW_FRAMES)
+            self.label_window = []
             self.state = "IDENTIFY"
 
+    # IDENTIFY: take camera frames and only believe the answer once the same
+    # label comes back on enough frames in a row.
     def _identify(self):
         self._log(f"station={self.station['id']}")
         label, confidence = identify_at_station(self.station["id"])
@@ -825,12 +986,31 @@ class Mission:
         self.last_confidence = confidence
         self._note_candidate(label, confidence)
 
+        # Add this frame's answer to the rolling window, keeping only the
+        # last IDENTIFY_WINDOW_FRAMES frames.
         self.label_window.append(label)
-        seen_labels = Counter(l for l in self.label_window if l != vision_utils.NO_MATCH)
-        if seen_labels:
-            self.last_label, self.consensus_count = seen_labels.most_common(1)[0]
-        else:
-            self.last_label, self.consensus_count = None, 0
+        if len(self.label_window) > IDENTIFY_WINDOW_FRAMES:
+            self.label_window.pop(0)
+
+        # Count how many times each real label appears in that window
+        # (NO_MATCH doesn't count as a vote for anything).
+        label_counts = {}
+        for seen in self.label_window:
+            if seen == vision_utils.NO_MATCH:
+                continue
+            if seen in label_counts:
+                label_counts[seen] = label_counts[seen] + 1
+            else:
+                label_counts[seen] = 1
+
+        # The label with the most votes wins. We only swap on a strictly
+        # bigger count, so on a tie the label we saw first keeps the lead.
+        self.last_label = None
+        self.consensus_count = 0
+        for seen in label_counts:
+            if label_counts[seen] > self.consensus_count:
+                self.last_label = seen
+                self.consensus_count = label_counts[seen]
 
         print(
             f"MISSION: state=IDENTIFY station={self.station['id']} frame={self.identify_frames} "
@@ -842,7 +1022,8 @@ class Mission:
             if self.last_label == target:
                 print(f"MISSION: IDENTIFY confirmed '{target}' at {self.station['id']} after {IDENTIFY_CONSENSUS_FRAMES} of the last {IDENTIFY_WINDOW_FRAMES} frames")
                 self.stations_inspected += 1
-                self.nav = Navigator(*self.station["observe"])
+                observe_x, observe_y = self.station["observe"]
+                self.nav = Navigator(observe_x, observe_y)
                 self.nav_steps = 0
                 self.state = "GOTO_OBSERVE"
             else:
@@ -854,12 +1035,15 @@ class Mission:
                     f"{self.station['id']}, retrying from observe pose"
                 )
                 self.identify_from_observe = True
-                self.nav = Navigator(*self.station["observe"])
+                observe_x, observe_y = self.station["observe"]
+                self.nav = Navigator(observe_x, observe_y)
                 self.nav_steps = 0
                 self.state = "NAVIGATE"
                 return
             self._skip_current_station(f"IDENTIFY reached {IDENTIFY_MAX_FRAMES} frames with no consensus at {self.station['id']}")
 
+    # GOTO_OBSERVE: the target is confirmed, so drive the last bit up to the
+    # station's official stopping point.
     def _goto_observe(self):
         self._log(f"station={self.station['id']}")
         # Close in on position, not on a timer: Navigator's own
@@ -880,10 +1064,10 @@ class Mission:
             self._log(f"GOTO_OBSERVE failed to close within {ARRIVAL_TOLERANCE} m of {self.station['id']} within the step budget")
             stop()
 
+    # FINAL_ALIGN: we're in the right place, now turn to face the right way.
     def _final_align(self):
         self._log(f"station={self.station['id']}")
-        _, _, yaw = get_pose()
-        yaw_error = normalise_angle(self.station["observe_yaw"] - yaw)
+        yaw_error = yaw_error_to(self.station)
         if abs(yaw_error) > OBSERVE_YAW_TOLERANCE:
             self.final_align_steps += 1
             if self.final_align_steps >= FINAL_ALIGN_STEP_BUDGET:
@@ -891,12 +1075,14 @@ class Mission:
                 self._log(f"FINAL_ALIGN failed to align heading at {self.station['id']} within the step budget")
                 stop()
                 return
-            rotate_in_place(OBSERVE_TURN_SPEED if yaw_error > 0 else -OBSERVE_TURN_SPEED)
+            rotate_towards_yaw(yaw_error)
             return
         stop()  # heading accepted -- FINAL_HOLD takes over zeroing velocity from here
         self.final_hold_steps = 0
         self.state = "FINAL_HOLD"
 
+    # FINAL_HOLD: sit completely still for a while, so the marker can see the
+    # robot really has stopped, then record the final numbers.
     def _final_hold(self):
         self._log(f"station={self.station['id']}")
         stop()
@@ -919,6 +1105,8 @@ class Mission:
 # ------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------
+# Sets everything up, then runs the mission one control step at a time until
+# it finishes or Webots shuts the controller down.
 def main():
     print("Group-project controller started.")
     print("Mission:", MISSION)
@@ -933,6 +1121,8 @@ def main():
 
     telemetry = TelemetryLogger(RUNS_DIR, MISSION_SUMMARY_PATH, enabled=TELEMETRY_ENABLED)
     mission = Mission(telemetry=telemetry)
+    # The main control loop. robot.step() advances the simulation by one
+    # timestep and returns -1 when Webots wants us to quit.
     while robot.step(timestep) != -1:
         mission.step()
         if mission.done():

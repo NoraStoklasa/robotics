@@ -12,6 +12,8 @@ import csv
 from datetime import datetime, timezone
 from pathlib import Path
 
+# The column headings for the two CSV files. The values we write later are put
+# in these same orders, so each number lands under the right heading.
 INTERVAL_FIELDS = [
     "sim_time", "state", "x", "y", "yaw", "station", "label", "confidence",
     "behaviour", "max_proximity",
@@ -29,6 +31,8 @@ class TelemetryLogger:
     run that never reached its own summary write.
     """
 
+    # Opens the per-run CSV and writes its heading row. If logging is turned
+    # off we do nothing at all, so no files get created.
     def __init__(self, runs_dir, summary_path, enabled=True):
         self.enabled = enabled
         self.summary_path = Path(summary_path)
@@ -39,27 +43,39 @@ class TelemetryLogger:
         if self.enabled:
             runs_dir = Path(runs_dir)
             runs_dir.mkdir(parents=True, exist_ok=True)
+            # A timestamp in the file name keeps each run's CSV separate.
             self.run_timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
             self.interval_path = runs_dir / f"run_{self.run_timestamp}.csv"
             self._file = self.interval_path.open("w", newline="")
-            self._writer = csv.DictWriter(self._file, fieldnames=INTERVAL_FIELDS)
-            self._writer.writeheader()
+            self._writer = csv.writer(self._file)
+            self._writer.writerow(INTERVAL_FIELDS)
 
-    def log_step(self, **fields):
+    # Add one line to this run's CSV describing where the robot is and what
+    # it is doing right now. flush() pushes it to disk straight away.
+    def log_step(self, sim_time, state, x, y, yaw, station, label, confidence,
+                 behaviour, max_proximity):
         if not self.enabled:
             return
-        self._writer.writerow(fields)
+        row = [sim_time, state, x, y, yaw, station, label, confidence,
+               behaviour, max_proximity]
+        self._writer.writerow(row)
         self._file.flush()
 
-    def log_summary(self, **fields):
+    # Called once at the end of the mission. Closes this run's CSV, then adds
+    # one line to the shared summary file that the report uses.
+    def log_summary(self, start_id, target, station, final_distance,
+                    completion_time, outcome):
         if not self.enabled:
             return
         if self._file is not None:
             self._file.close()
         self.summary_path.parent.mkdir(parents=True, exist_ok=True)
+        # Only write the heading row the very first time the file is made.
         write_header = not self.summary_path.exists()
+        row = [self.run_timestamp, start_id, target, station, final_distance,
+               completion_time, outcome]
         with self.summary_path.open("a", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=SUMMARY_FIELDS)
+            writer = csv.writer(f)
             if write_header:
-                writer.writeheader()
-            writer.writerow({"run_timestamp": self.run_timestamp, **fields})
+                writer.writerow(SUMMARY_FIELDS)
+            writer.writerow(row)

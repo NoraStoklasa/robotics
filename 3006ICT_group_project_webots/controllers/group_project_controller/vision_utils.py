@@ -33,8 +33,6 @@ were wrong in ways only real data exposed (see docs/find_poster_region_notes.md
 for the specific failures and what fixed each one).
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import cv2
@@ -159,10 +157,53 @@ _CLOSE_CROP_TOP_PX = 8   # close-range/top-clipped crops can leave the printed
                          # normally-framed crops are left unchanged for IoU.
 
 
-def _barrier_candidates(
-    frame_bgr: np.ndarray, x0: int, x1: int, allow_robust_anchor: bool = True
-) -> list[tuple[int, int, int, int, float]]:
-    """Every plausible barrier-shaped contour's bbox (x, y, w, h, area)
+# Used to sort the boxes below by their contour area, biggest first.
+# sorted()/sort() needs a function saying which part of each box to compare.
+def box_area(box):
+    return box[4]
+
+
+# Threshold the brightness image at each of the value bands, find the dark
+# blobs, and keep the ones that are actually barrier-shaped. `anchor` is the
+# brightness we count "dark" from; `cap_height` trims a box that came out
+# taller than it is wide (see _barrier_candidates for why).
+def _boxes_for_anchor(val, x0, x1, anchor, cap_height):
+    found = []
+    for band in _BARRIER_VALUE_BANDS:
+        # White (255) wherever the pixel is dark enough, black everywhere else.
+        mask = (val <= anchor + band).astype(np.uint8) * 255
+        # Blank out everything outside the columns we were asked to search.
+        mask[:, :x0] = 0
+        mask[:, x1:] = 0
+        # Closing fills small holes so one barrier comes out as one blob.
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8))
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        for c in contours:
+            x, y, bw, bh = cv2.boundingRect(c)
+            # Too small to be a barrier at any distance we care about.
+            if bw < _MIN_BARRIER_SIDE_PX or bh < _MIN_BARRIER_SIDE_PX:
+                continue
+            # Too tall and thin to be a barrier.
+            if bw < _BARRIER_ASPECT_MIN * bh:
+                continue
+            area = cv2.contourArea(c)
+            # Too "hollow": the blob doesn't fill enough of its own box.
+            if area < _MIN_SOLIDITY * bw * bh:
+                continue
+            if cap_height and bh > bw:
+                bh = bw
+            found.append((x, y, bw, bh, area))
+    return found
+
+
+def _barrier_candidates(frame_bgr, x0, x1, allow_robust_anchor=True):
+    """Find the dark barrier in one vertical strip of the picture.
+
+    In short: the barrier is the darkest solid thing in view, so we threshold
+    on brightness at a few different cut-offs and keep any blob that is
+    roughly barrier-shaped.
+
+    Every plausible barrier-shaped contour's bbox (x, y, w, h, area)
     found within columns [x0, x1) at any of _BARRIER_VALUE_BANDS, largest
     first. Near-duplicate boxes (same barrier found at more than one band)
     are kept -- downstream dedup happens naturally since they produce the
@@ -194,49 +235,38 @@ def _barrier_candidates(
     height from the bottom (keeping the top, which measured correctly in
     every case) removes the floor without needing to distinguish it from
     the barrel by colour."""
+    # Convert to HSV and keep only the "value" (brightness) channel, because
+    # the barrier is found by how dark it is, not by its colour.
     hsv = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV)
     val = hsv[:, :, 2].astype(int)
     zone = val[:, x0:x1]
+    # Nothing dark enough in this strip of the image, so there is no barrier.
     if zone.size == 0 or int(zone.min()) > _MAX_VMIN:
         return []
     vmin = int(zone.min())
 
-    def _boxes_for(anchor: int, cap_height: bool) -> list[tuple[int, int, int, int, float]]:
-        found = []
-        for band in _BARRIER_VALUE_BANDS:
-            mask = (val <= anchor + band).astype(np.uint8) * 255
-            mask[:, :x0] = 0
-            mask[:, x1:] = 0
-            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8))
-            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            for c in contours:
-                x, y, bw, bh = cv2.boundingRect(c)
-                if bw < _MIN_BARRIER_SIDE_PX or bh < _MIN_BARRIER_SIDE_PX:
-                    continue
-                if bw < _BARRIER_ASPECT_MIN * bh:
-                    continue
-                area = cv2.contourArea(c)
-                if area < _MIN_SOLIDITY * bw * bh:
-                    continue
-                if cap_height and bh > bw:
-                    bh = bw
-                found.append((x, y, bw, bh, area))
-        return found
-
-    boxes = _boxes_for(vmin, cap_height=False)
+    # First try: anchor on the darkest pixel actually in the strip.
+    boxes = _boxes_for_anchor(val, x0, x1, vmin, cap_height=False)
+    # Nothing found, so try the backup anchor described in the docstring.
     if not boxes and allow_robust_anchor:
         vmin_robust = int(np.percentile(zone, _ROBUST_VMIN_PERCENTILE))
         # Only worth trying once it's far enough from the true min to be a
         # genuinely different region -- the fire_extinguisher hose-vs-panel
         # gap measured 54 on every affected frame.
         if vmin_robust - vmin >= _ROBUST_VMIN_GAP_MIN:
-            boxes = _boxes_for(vmin_robust, cap_height=True)
-    boxes.sort(key=lambda b: b[4], reverse=True)
+            boxes = _boxes_for_anchor(val, x0, x1, vmin_robust, cap_height=True)
+    # Biggest box first, so the most likely barrier is looked at first.
+    boxes.sort(key=box_area, reverse=True)
     return boxes
 
 
-def _all_barrier_candidates(frame_bgr: np.ndarray) -> list[tuple[int, int, int, int, float, int]]:
-    """_barrier_candidates run over the full search zone plus overlapping
+def _all_barrier_candidates(frame_bgr):
+    """Run the barrier search three times -- over the whole middle of the
+    picture, then over its left half and its right half -- and pool the
+    results. Searching the halves separately helps when some other dark
+    object is sitting next to the real barrier.
+
+    _barrier_candidates run over the full search zone plus overlapping
     left and right half-windows (see _SUBWINDOW_FRAC), pooled together.
     Each result also carries its own window's width, EXCEPT for the two
     half-windows, which report a width of -1 (meaning: never treat as
@@ -263,23 +293,41 @@ def _all_barrier_candidates(frame_bgr: np.ndarray) -> list[tuple[int, int, int, 
     the true min everywhere first, and only falling back to the robust
     anchor if that leaves every single window empty, makes the fallback
     unable to outrank a real candidate found anywhere in the frame."""
+    # Cut a small margin off each side of the picture first, then work out
+    # the three column ranges we are going to search in.
     w = frame_bgr.shape[1]
-    x0, x1 = int(w * _SIDE_MARGIN_FRAC), int(w * (1 - _SIDE_MARGIN_FRAC))
+    x0 = int(w * _SIDE_MARGIN_FRAC)
+    x1 = int(w * (1 - _SIDE_MARGIN_FRAC))
     half = int((x1 - x0) * _SUBWINDOW_FRAC)
+    # Each entry is (first column, last column, width used for the "too vague"
+    # check). The two half-windows use -1 so they never count as too vague.
     windows = [(x0, x1, x1 - x0), (x0, x0 + half, -1), (x1 - half, x1, -1)]
+
+    # First pass: the normal search, in all three windows.
     out = []
     for wx0, wx1, degenerate_zone_w in windows:
-        for bx, by, bw, bh, area in _barrier_candidates(frame_bgr, wx0, wx1, allow_robust_anchor=False):
+        boxes = _barrier_candidates(frame_bgr, wx0, wx1, allow_robust_anchor=False)
+        for bx, by, bw, bh, area in boxes:
             out.append((bx, by, bw, bh, area, degenerate_zone_w))
+
+    # Only if that found nothing anywhere do we allow the backup anchor -- see
+    # the docstring above for why it is a last resort and not a per-window one.
     if not out:
         for wx0, wx1, degenerate_zone_w in windows:
-            for bx, by, bw, bh, area in _barrier_candidates(frame_bgr, wx0, wx1, allow_robust_anchor=True):
+            boxes = _barrier_candidates(frame_bgr, wx0, wx1, allow_robust_anchor=True)
+            for bx, by, bw, bh, area in boxes:
                 out.append((bx, by, bw, bh, area, degenerate_zone_w))
     return out
 
 
-def _poster_from_barrier(bx: int, by: int, bw: int, bh: int) -> tuple[int, int, int, int]:
-    """Project the poster's known size fraction onto a detected barrier box,
+def _poster_from_barrier(bx, by, bw, bh):
+    """Work out where the poster is, given where the barrier is.
+
+    We know from the barrier's model file that the poster is always the same
+    fraction of the barrier and sits in the middle of it, so we just scale
+    the barrier box down and keep the same centre point.
+
+    Project the poster's known size fraction onto a detected barrier box,
     centred on it. Applied uniformly -- no separate "clipped, use the raw
     box" case: that special case was tried and, combined with any margin
     narrow enough not to clip genuine barrier width, could not reliably
@@ -292,13 +340,19 @@ def _poster_from_barrier(bx: int, by: int, bw: int, bh: int) -> tuple[int, int, 
     to be plausible, which is exactly the intended behaviour for a case
     outside where this method is meant to work (see Issue #5's own
     close-range clipping notes)."""
+    # Shrink the barrier box down to poster size...
     pw = int(round(bw * _POSTER_WIDTH_FRAC))
     ph = int(round(bh * _POSTER_HEIGHT_FRAC))
-    cx, cy = bx + bw // 2, by + bh // 2
-    return max(0, cx - pw // 2), max(0, cy - ph // 2), pw, ph
+    # ...then put it back centred on the middle of the barrier. max(0, ...)
+    # stops the box starting off the left/top edge of the picture.
+    cx = bx + bw // 2
+    cy = by + bh // 2
+    px = max(0, cx - pw // 2)
+    py = max(0, cy - ph // 2)
+    return px, py, pw, ph
 
 
-def _expanded_close_crop(box: tuple[int, int, int, int], frame_w: int, frame_h: int) -> tuple[int, int, int, int]:
+def _expanded_close_crop(box, frame_w, frame_h):
     """Slightly widen very close, top-clipped crops for identification.
 
     Tested on the Issue #9 per-world captures: the raw geometric projection can
@@ -319,7 +373,19 @@ def _expanded_close_crop(box: tuple[int, int, int, int], frame_w: int, frame_h: 
     return box
 
 
-def find_poster_region(image: np.ndarray, debug: bool = False, debug_path: str | Path | None = None):
+# Decides the order the candidate poster boxes get ranked in. sort() puts the
+# smallest of these three values first, so this reads as: put the vague
+# "whole window was dark" boxes last; of the rest prefer the one closest to a
+# square (the poster really is square); and if two are equally square, prefer
+# the bigger one. The minus sign flips area so that bigger counts as smaller
+# here, i.e. comes first.
+def candidate_rank(candidate):
+    x, y, box_w, box_h = candidate["box"]
+    squareness = abs(box_w / box_h - ASPECT_RATIO_TARGET)
+    return (candidate["degenerate"], squareness, -candidate["area"])
+
+
+def find_poster_region(image, debug=False, debug_path=None):
     """Return (x, y, w, h) for the most plausible poster region in `image`
     (BGR, as from camera_bgr()), or None if no plausible candidate survives.
 
@@ -332,13 +398,20 @@ def find_poster_region(image: np.ndarray, debug: bool = False, debug_path: str |
     -- this only affects what gets written to disk, never the returned box.
     """
     h, w = image.shape[:2]
+
+    # Turn every barrier we found into a poster box, then throw away the ones
+    # that can't be a real poster.
     candidates = []
     for bx, by, bw, bh, _area, zone_w in _all_barrier_candidates(image):
         px, py, pw, ph = _poster_from_barrier(bx, by, bw, bh)
+        # Reject anything with no size, or that falls off the picture.
         if pw <= 0 or ph <= 0 or py + ph > h or px + pw > w:
             continue
+        # Reject anything far too small or far too big to be a poster.
         if not (MIN_POSTER_AREA_PX <= pw * ph <= MAX_POSTER_AREA_PX):
             continue
+        # Reject anything that isn't roughly square -- the poster is 0.22 m
+        # by 0.22 m, so head-on it should look square.
         ratio = pw / ph
         if abs(ratio - ASPECT_RATIO_TARGET) > ASPECT_RATIO_TOLERANCE:
             continue
@@ -370,18 +443,20 @@ def find_poster_region(image: np.ndarray, debug: bool = False, debug_path: str |
     # poster's known square shape over the merely larger one. Issue #9 exposed
     # this with S2 captures where an unrelated left-wall picture was a little
     # taller/larger than the true mug poster and therefore won on area alone.
-    candidates.sort(key=lambda c: (
-        c["degenerate"],
-        abs(c["box"][2] / c["box"][3] - ASPECT_RATIO_TARGET),
-        -c["area"],
-    ))
+    candidates.sort(key=candidate_rank)
     if candidates:
-        expanded = _expanded_close_crop(candidates[0]["box"], w, h)
-        candidates[0] = {**candidates[0], "box": expanded, "area": expanded[2] * expanded[3]}
+        # Only the winning box can get the close-range widening; the rest are
+        # left exactly as they were.
+        best = candidates[0]
+        expanded = _expanded_close_crop(best["box"], w, h)
+        best["box"] = expanded
+        best["area"] = expanded[2] * expanded[3]
     find_poster_region.last_candidates = candidates
 
     chosen = candidates[0]["box"] if candidates else None
 
+    # Debug drawing only. This writes a picture to disk for us to look at and
+    # never changes the box we return.
     if debug:
         vis = image.copy()
         for i, c in enumerate(candidates):
@@ -475,10 +550,12 @@ class _TargetIdentifier:
                 raise RuntimeError(f"Missing reference image: {path}")
             ref_arrays.append(image)
             ref_images.append(T.functional.to_pil_image(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)))
-        self.reference_features = {
-            label: self._reference_features(image)
-            for label, image in zip(self.labels, ref_arrays)
-        }
+        # Work out the comparison features for each reference photo once, up
+        # front, and store them in a dict keyed by the label name.
+        self.reference_features = {}
+        for i in range(len(self.labels)):
+            label = self.labels[i]
+            self.reference_features[label] = self._reference_features(ref_arrays[i])
 
         self.model = torchvision.models.resnet18(
             weights=torchvision.models.ResNet18_Weights.IMAGENET1K_V1
@@ -520,7 +597,7 @@ class _TargetIdentifier:
         ])
 
     @staticmethod
-    def _reference_features(image_bgr: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _reference_features(image_bgr):
         resized = cv2.resize(
             image_bgr,
             (_REFERENCE_SIMILARITY_SIZE, _REFERENCE_SIMILARITY_SIZE),
@@ -540,7 +617,7 @@ class _TargetIdentifier:
         cv2.normalize(hist, hist)
         return gray, lab.reshape(-1), hist
 
-    def _reference_similarity(self, crop_bgr: np.ndarray, label: str) -> float:
+    def _reference_similarity(self, crop_bgr, label):
         gray, lab, hist = self._reference_features(crop_bgr)
         ref_gray, ref_lab, ref_hist = self.reference_features[label]
 
@@ -551,7 +628,7 @@ class _TargetIdentifier:
         hist_score = float(cv2.compareHist(hist, ref_hist, cv2.HISTCMP_CORREL))
         return 0.55 * gray_score + 0.35 * lab_score + 0.10 * hist_score
 
-    def score(self, crop_bgr: np.ndarray) -> dict:
+    def score(self, crop_bgr):
         rgb = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2RGB)
         with self.torch.no_grad():
             probs = self.model(self.inference_transform(rgb).unsqueeze(0)).softmax(1)[0]
@@ -561,9 +638,18 @@ class _TargetIdentifier:
         best_confidence = float(values[0])
         runner_confidence = float(values[1])
         raw_label = self.labels[best_index]
-        reference_threshold = MIN_REFERENCE_SIMILARITY_BY_LABEL.get(
-            raw_label, MIN_REFERENCE_SIMILARITY
-        )
+        # A couple of labels have their own similarity floor; everything else
+        # uses the shared default.
+        if raw_label in MIN_REFERENCE_SIMILARITY_BY_LABEL:
+            reference_threshold = MIN_REFERENCE_SIMILARITY_BY_LABEL[raw_label]
+        else:
+            reference_threshold = MIN_REFERENCE_SIMILARITY
+
+        # The model's score for every label, so a failed match can be explained.
+        all_scores = {}
+        for i in range(len(self.labels)):
+            all_scores[self.labels[i]] = float(probs[i])
+
         return {
             "raw_label": raw_label,
             "confidence": best_confidence,
@@ -572,10 +658,7 @@ class _TargetIdentifier:
             "margin": best_confidence - runner_confidence,
             "reference_similarity": self._reference_similarity(crop_bgr, raw_label),
             "reference_threshold": reference_threshold,
-            "scores": {
-                self.labels[int(i)]: float(probs[int(i)])
-                for i in range(len(self.labels))
-            },
+            "scores": all_scores,
         }
 
 
@@ -586,7 +669,26 @@ def _get_identifier():
     return _IDENTIFIER
 
 
-def identify(crop: np.ndarray) -> tuple[str, float]:
+# Every "couldn't identify it" answer is the same apart from the reason, so
+# build it in one place instead of writing the same dict out three times.
+# `reason` records which check failed, which is handy when debugging.
+def no_match_result(reason):
+    return {
+        "label": NO_MATCH,
+        "raw_label": NO_MATCH,
+        "confidence": 0.0,
+        "runner_up": NO_MATCH,
+        "runner_up_confidence": 0.0,
+        "margin": 0.0,
+        "reference_similarity": 0.0,
+        "reference_threshold": None,
+        "accepted": False,
+        "reject_reason": reason,
+        "scores": {},
+    }
+
+
+def identify(crop):
     """Input: BGR poster crop from `find_poster_region()`.
 
     Output: `(label, confidence)`, where `label` is one of
@@ -604,40 +706,14 @@ def identify(crop: np.ndarray) -> tuple[str, float]:
     `NO_MATCH`.
     """
     if crop is None or getattr(crop, "size", 0) == 0:
-        result = {
-            "label": NO_MATCH,
-            "raw_label": NO_MATCH,
-            "confidence": 0.0,
-            "runner_up": NO_MATCH,
-            "runner_up_confidence": 0.0,
-            "margin": 0.0,
-            "reference_similarity": 0.0,
-            "reference_threshold": None,
-            "accepted": False,
-            "reject_reason": "empty_crop",
-            "scores": {},
-        }
-        identify.last_result = result
+        identify.last_result = no_match_result("empty_crop")
         identify.last_scores = {}
         return NO_MATCH, 0.0
 
     try:
         scored = _get_identifier().score(crop)
     except Exception as exc:  # pragma: no cover - depends on active Python env
-        result = {
-            "label": NO_MATCH,
-            "raw_label": NO_MATCH,
-            "confidence": 0.0,
-            "runner_up": NO_MATCH,
-            "runner_up_confidence": 0.0,
-            "margin": 0.0,
-            "reference_similarity": 0.0,
-            "reference_threshold": None,
-            "accepted": False,
-            "reject_reason": f"classifier_unavailable:{type(exc).__name__}",
-            "scores": {},
-        }
-        identify.last_result = result
+        identify.last_result = no_match_result(f"classifier_unavailable:{type(exc).__name__}")
         identify.last_scores = {}
         return NO_MATCH, 0.0
 
@@ -649,38 +725,31 @@ def identify(crop: np.ndarray) -> tuple[str, float]:
     elif scored["reference_similarity"] < scored["reference_threshold"]:
         reject_reason = "below_reference_similarity"
 
-    label = NO_MATCH if reject_reason else scored["raw_label"]
-    result = {
-        **scored,
-        "label": label,
-        "accepted": label != NO_MATCH,
-        "reject_reason": reject_reason,
-    }
+    # Any rejection reason at all means we refuse to commit to a label.
+    if reject_reason:
+        label = NO_MATCH
+    else:
+        label = scored["raw_label"]
+
+    # Start from everything score() worked out, then add our own verdict.
+    result = dict(scored)
+    result["label"] = label
+    result["accepted"] = (label != NO_MATCH)
+    result["reject_reason"] = reject_reason
     identify.last_result = result
     identify.last_scores = scored["scores"]
     return label, scored["confidence"]
 
 
-identify.last_result = {
-    "label": NO_MATCH,
-    "raw_label": NO_MATCH,
-    "confidence": 0.0,
-    "runner_up": NO_MATCH,
-    "runner_up_confidence": 0.0,
-    "margin": 0.0,
-    "reference_similarity": 0.0,
-    "reference_threshold": None,
-    "accepted": False,
-    "reject_reason": "not_run",
-    "scores": {},
-}
+# Starting value, in case anything reads this before identify() has ever run.
+identify.last_result = no_match_result("not_run")
 identify.last_scores = {}
 
 
 _IDENTIFY_MAX_RANKED_CANDIDATES = 3  # see identify_frame
 
 
-def identify_frame(image: np.ndarray) -> tuple[str, float]:
+def identify_frame(image):
     """Run `find_poster_region()` then `identify()`, trying more than one
     interpretation of where the poster is when they disagree, instead of
     committing to the single top-ranked geometric projection.
@@ -720,24 +789,45 @@ def identify_frame(image: np.ndarray) -> tuple[str, float]:
     own (rejected) result is kept, unchanged from calling `identify()`
     directly on it."""
     crop_box = find_poster_region(image)
+    # No poster found at all, so there is nothing to identify.
     if crop_box is None:
         return identify(None)
+
+    # Build the list of crops to try. For each of the top few candidates we
+    # try both the narrow poster box and the whole barrier box it came from.
+    # seen_poster_boxes stops us counting the same poster box twice when it
+    # turned up at more than one brightness band.
     boxes = []
-    seen_poster_boxes = set()
+    seen_poster_boxes = []
     for c in find_poster_region.last_candidates:
         if c["box"] in seen_poster_boxes:
-            continue  # near-duplicate of an already-ranked candidate (same box found at another band/anchor)
-        seen_poster_boxes.add(c["box"])
+            continue
+        seen_poster_boxes.append(c["box"])
+        # Stop once we have looked at enough candidates.
         if len(seen_poster_boxes) > _IDENTIFY_MAX_RANKED_CANDIDATES:
             break
         for box in (c["box"], c["from_barrier"]):
             if box not in boxes:
                 boxes.append(box)
-    attempts = []
+    # Try identifying each candidate crop, then keep the best answer. "Best"
+    # means: an accepted result always beats a rejected one, and between two
+    # results of the same kind the higher confidence wins. We only swap on a
+    # strictly better score, so if two tie the earlier (higher-ranked) crop
+    # keeps the win.
+    best_label = None
+    best_confidence = None
+    best_result = None
+    best_score = None
     for bx, by, bw, bh in boxes:
         label, confidence = identify(image[by:by + bh, bx:bx + bw])
-        attempts.append((label, confidence, dict(identify.last_result)))
-    label, confidence, result = max(attempts, key=lambda a: (a[2]["accepted"], a[1]))
-    identify.last_result = result
-    identify.last_scores = result["scores"]
-    return label, confidence
+        result = dict(identify.last_result)
+        score = (result["accepted"], confidence)
+        if best_score is None or score > best_score:
+            best_label = label
+            best_confidence = confidence
+            best_result = result
+            best_score = score
+
+    identify.last_result = best_result
+    identify.last_scores = best_result["scores"]
+    return best_label, best_confidence
