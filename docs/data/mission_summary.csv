@@ -21,3 +21,5 @@ run_timestamp,start_id,target,station,final_distance,completion_time,outcome
 20260916T102355Z,A,headphones,S7,,192.86,FAILED
 20260916T104746Z,A,headphones,S7,0.099,180.83,SUCCESS
 20260916T110759Z,C,soda_can,S1,0.097,177.28,SUCCESS
+20260917T080524Z,C,coffee_mug,S1,,173.18,FAILED
+20260917T081044Z,C,coffee_mug,S2,0.098,91.84,SUCCESS

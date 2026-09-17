@@ -420,22 +420,26 @@ MIN_CONFIDENCE_MARGIN = 0.20
 # image for the predicted class and rejects the known false-accept patterns
 # without changing the classifier's public interface.
 MIN_REFERENCE_SIMILARITY = -0.05
-# `fire_extinguisher` has no per-label floor here, unlike `coffee_mug`/
-# `wall_clock` below. Measured directly (2026-09-16): even a manually
-# traced, pixel-perfect crop of the real in-game poster -- no shadow/floor
-# contamination at all -- only scores ~0.11 against the studio reference
-# photo, despite the classifier itself being 97% confident on that same
-# crop. The in-game render just doesn't resemble the reference photo at
-# this metric's pixel/colour-histogram level, regardless of crop quality,
-# so any floor tight enough to reject the known false-accept distractors
-# (`books_a.png`/`books_b.png`, ~0.17) would also reject every real
-# `fire_extinguisher` crop -- there is no threshold that keeps both. Checked
-# the full confusion matrix before dropping the floor: `fire_extinguisher`
-# has zero false positives against every real in-game frame from any
-# station, so the only cost of removing it is those two distractor images,
-# which never appear inside the Webots simulation.
+# Neither `fire_extinguisher` nor `coffee_mug` has a per-label floor here,
+# unlike `wall_clock` below -- both removed after the same measurement
+# showed the same dead end. `fire_extinguisher` (2026-09-16): even a
+# manually traced, pixel-perfect crop of the real in-game poster -- no
+# shadow/floor contamination at all -- only scores ~0.11 against the studio
+# reference photo, despite the classifier itself being 97% confident on
+# that same crop; the known false-accept distractors (`books_a.png`/
+# `books_b.png`, ~0.17) score *higher* than that, so no floor keeps both.
+# `coffee_mug` (2026-09-17): a real, live `S2` capture (world C) scored
+# raw_label=coffee_mug at 0.86-0.90 confidence with an 0.82+ margin on 5 of
+# 5 frames from the retry viewpoint, but only 0.014-0.018 reference
+# similarity -- again below its own distractors (`keyboard_b.png` 0.092,
+# `soccer_ball_a.png` 0.058) that the 0.10 floor was protecting against.
+# Both labels' in-game renders just don't resemble their studio reference
+# photos at this metric's pixel/colour-histogram level, regardless of crop
+# quality. Checked the full confusion matrix before dropping either floor:
+# both labels have zero false positives against every real in-game frame
+# from any other station, so the only cost of removing them is those
+# distractor images, which never appear inside the Webots simulation.
 MIN_REFERENCE_SIMILARITY_BY_LABEL = {
-    "coffee_mug": 0.10,
     "wall_clock": 0.00,
 }
 _REFERENCE_SIMILARITY_SIZE = 64

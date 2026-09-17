@@ -17,9 +17,9 @@ head predicts a class, the crop must still look enough like that class's supplie
 ## Acceptance Evidence
 
 - Valid outputs across station and distractor rows: 120/120.
-- Distractor false-accepts at the shipped threshold: 1/20.
+- Distractor false-accepts at the shipped threshold: 3/20.
 - Combined best captured station crop accuracy: 7/8.
-- `NO_MATCH` rate over all evaluated rows: 0.342.
+- `NO_MATCH` rate over all evaluated rows: 0.283.
 - Threshold sweep values tested: 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80.
 
 ## Per-World Station Coverage
@@ -39,7 +39,7 @@ another world.
 | Station | Truth | Returned | Confidence | Margin | Reference similarity | Frame |
 |---|---|---|---:|---:|---:|---|
 | `S1` | `soda_can` | `soda_can` | 0.918 | 0.889 | 0.264 | `C_S1_d0p450_hp00.png` |
-| `S2` | `coffee_mug` | `coffee_mug` | 0.958 | 0.943 | 0.319 | `A_S2_d0p800_hp10.png` |
+| `S2` | `coffee_mug` | `coffee_mug` | 0.966 | 0.951 | 0.027 | `A_S2_d0p450_hp00.png` |
 | `S3` | `backpack` | `camera` | 0.815 | 0.732 | 0.015 | `C_S3_d1p000_hm10.png` |
 | `S4` | `fire_extinguisher` | `fire_extinguisher` | 0.931 | 0.917 | 0.070 | `B_S4_d0p295_hp00.png` |
 | `S5` | `camera` | `camera` | 0.987 | 0.983 | 0.006 | `B_S5_d0p450_hm10.png` |
@@ -57,7 +57,7 @@ CSV: `docs/data/vision_confusion_matrix.csv`
 
 At the shipped point (0.50), the best-station true-accept rate is
 0.875 and the distractor false-accept
-rate is 0.050.
+rate is 0.150.
 
 ![threshold sweep](data/vision_threshold_sweep.png)
 
@@ -66,11 +66,11 @@ rate is 0.050.
 | Label | TP | FP | FN | Precision | Recall |
 |---|---:|---:|---:|---:|---:|
 | `soda_can` | 13 | 0 | 1 | 1.000 | 0.929 |
-| `coffee_mug` | 7 | 0 | 7 | 1.000 | 0.500 |
+| `coffee_mug` | 13 | 2 | 1 | 0.867 | 0.929 |
 | `backpack` | 6 | 0 | 8 | 1.000 | 0.429 |
 | `fire_extinguisher` | 5 | 1 | 3 | 0.833 | 0.625 |
 | `camera` | 11 | 3 | 0 | 0.786 | 1.000 |
-| `running_shoe` | 13 | 1 | 1 | 0.929 | 0.929 |
+| `running_shoe` | 13 | 0 | 1 | 1.000 | 0.929 |
 | `headphones` | 7 | 1 | 4 | 0.875 | 0.636 |
 | `wall_clock` | 11 | 0 | 3 | 1.000 | 0.786 |
 
@@ -87,13 +87,13 @@ All 20 distractor textures returned `NO_MATCH`; full table: `docs/data/vision_di
 | `chair_a.png` | `coffee_mug` | 0.413 | 0.041 | `NO_MATCH` | `below_min_confidence` |
 | `chair_b.png` | `coffee_mug` | 0.442 | 0.050 | `NO_MATCH` | `below_min_confidence` |
 | `keyboard_a.png` | `coffee_mug` | 0.366 | 0.079 | `NO_MATCH` | `below_min_confidence` |
-| `keyboard_b.png` | `coffee_mug` | 0.543 | 0.092 | `NO_MATCH` | `below_reference_similarity` |
+| `keyboard_b.png` | `coffee_mug` | 0.543 | 0.092 | `coffee_mug` | `None` |
 | `landscape_a.png` | `headphones` | 0.208 | 0.196 | `NO_MATCH` | `below_min_confidence` |
 | `monitor_a.png` | `backpack` | 0.260 | 0.279 | `NO_MATCH` | `below_min_confidence` |
 | `monitor_b.png` | `backpack` | 0.224 | 0.398 | `NO_MATCH` | `below_min_confidence` |
 | `plant_a.png` | `headphones` | 0.232 | 0.174 | `NO_MATCH` | `below_min_confidence` |
 | `plant_b.png` | `camera` | 0.318 | 0.301 | `NO_MATCH` | `below_min_confidence` |
-| `soccer_ball_a.png` | `coffee_mug` | 0.749 | 0.058 | `NO_MATCH` | `below_reference_similarity` |
+| `soccer_ball_a.png` | `coffee_mug` | 0.749 | 0.058 | `coffee_mug` | `None` |
 | `soccer_ball_b.png` | `wall_clock` | 0.555 | -0.018 | `NO_MATCH` | `below_reference_similarity` |
 | `teddy_bear_a.png` | `wall_clock` | 0.454 | -0.014 | `NO_MATCH` | `below_min_confidence` |
 | `teddy_bear_b.png` | `wall_clock` | 0.483 | -0.008 | `NO_MATCH` | `below_min_confidence` |
