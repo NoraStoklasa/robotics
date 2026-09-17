@@ -603,6 +603,16 @@ class Mission:
         self.outcome = None         # set to "TIMEOUT" only; otherwise inferred from self.state
         self._finished = False
 
+        # Issue #20 matrix runs: a clear terminal banner at start and end, plus
+        # running max-proximity and stations-inspected counters for the
+        # results-matrix CSV so a run's outcome is obvious without opening a log file.
+        self.max_proximity_seen = 0.0
+        self.stations_inspected = 0
+        print(
+            f"\n===== MISSION START: start_pose={self.start_id} target='{target}' "
+            f"budget={TIME_BUDGET:.0f}s =====\n"
+        )
+
     def done(self):
         return self.state in ("STOP", "FAILED")
 
@@ -615,6 +625,7 @@ class Mission:
 
     def _skip_current_station(self, reason):
         print(f"MISSION: {reason}, marking {self.station['id']} visited")
+        self.stations_inspected += 1
         self.unvisited = [s for s in self.unvisited if s["id"] != self.station["id"]]
         self.state = "PLAN"
 
@@ -694,20 +705,44 @@ class Mission:
             return
         self._finished = True
         outcome = self.outcome or ("SUCCESS" if self.state == "STOP" else "FAILED")
+        elapsed = self._elapsed_time()
+        collision_flag = self.max_proximity_seen > STOP
+        over_budget = elapsed > TIME_BUDGET
         if self.telemetry is not None:
             self.telemetry.log_summary(
                 start_id=self.start_id,
                 target=target,
                 station=self.station["id"] if self.station else "",
                 final_distance=f"{self.final_distance:.3f}" if self.final_distance is not None else "",
-                completion_time=f"{self._elapsed_time():.2f}",
+                completion_time=f"{elapsed:.2f}",
                 outcome=outcome,
             )
+
+        # Issue #20 matrix runs: everything a run row in results_matrix.csv
+        # needs, printed as one unmissable block so a failed/void run is
+        # obvious at a glance in the Webots console without opening the CSVs.
+        result_icon = "PASS" if outcome == "SUCCESS" else "FAIL"
+        print(
+            "\n===== MISSION RESULT: "
+            f"{result_icon} =====\n"
+            f"  outcome:              {outcome}\n"
+            f"  start_pose:           {self.start_id}\n"
+            f"  target:               {target}\n"
+            f"  station_reached:      {self.station['id'] if self.station else 'none'}\n"
+            f"  final_distance_m:     {f'{self.final_distance:.3f}' if self.final_distance is not None else 'n/a'}\n"
+            f"  completion_time_s:    {elapsed:.2f}"
+            f"{'  *** OVER 240s BUDGET ***' if over_budget else ''}\n"
+            f"  stations_inspected:   {self.stations_inspected}\n"
+            f"  max_proximity:        {self.max_proximity_seen:.1f}"
+            f"{'  *** COLLISION (above STOP threshold) ***' if collision_flag else ''}\n"
+            "===========================================\n"
+        )
 
     def step(self):
         self._check_time_budget()
         self._check_degraded_mode()
         self._log_telemetry_row()
+        self.max_proximity_seen = max(self.max_proximity_seen, max(proximity_values()))
         if self.state == "PLAN":
             self._plan()
         elif self.state == "NAVIGATE":
@@ -806,6 +841,7 @@ class Mission:
         if self.consensus_count >= IDENTIFY_CONSENSUS_FRAMES:
             if self.last_label == target:
                 print(f"MISSION: IDENTIFY confirmed '{target}' at {self.station['id']} after {IDENTIFY_CONSENSUS_FRAMES} of the last {IDENTIFY_WINDOW_FRAMES} frames")
+                self.stations_inspected += 1
                 self.nav = Navigator(*self.station["observe"])
                 self.nav_steps = 0
                 self.state = "GOTO_OBSERVE"
