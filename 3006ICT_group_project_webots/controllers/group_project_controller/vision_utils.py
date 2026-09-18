@@ -1,3 +1,4 @@
+# Report Section 4.1 -- Vision: finding the poster and naming the target
 """Issue #7: find the poster region in a camera frame.
 
 How it works: the barrier the poster is stuck on is the darkest solid thing
@@ -64,6 +65,8 @@ _CLOSE_CROP_TOP_PX = 8   # very close, top-clipped crops get widened a little,
                          # or the target is too tightly boxed to recognise
 
 
+# Report Section 4.1 -- Finding the poster in the frame (barrier-first
+# detector, Figure 8/Table 7)
 # Used to sort the boxes below by their contour area, biggest first.
 # sorted()/sort() needs a function saying which part of each box to compare.
 def box_area(box):
@@ -103,6 +106,8 @@ def _boxes_for_anchor(val, x0, x1, anchor, cap_height):
     return found
 
 
+# Report Section 4.1 -- Finding the poster in the frame (barrier search per
+# vertical strip; the fire-extinguisher robust-anchor retry is discussed here)
 def _barrier_candidates(frame_bgr, x0, x1, allow_robust_anchor=True):
     """Find the dark barrier in one vertical strip of the picture.
 
@@ -143,6 +148,8 @@ def _barrier_candidates(frame_bgr, x0, x1, allow_robust_anchor=True):
     return boxes
 
 
+# Report Section 4.1 -- Finding the poster in the frame (whole-frame + left/
+# right sub-window search, pooled)
 def _all_barrier_candidates(frame_bgr):
     """Run the barrier search three times and pool the results: once over the
     whole middle of the picture, then over its left half and its right half.
@@ -186,6 +193,8 @@ def _all_barrier_candidates(frame_bgr):
     return out
 
 
+# Report Section 4.1 -- Finding the poster in the frame (poster box as a
+# known fraction of the barrier's face, from the supplied barrier proto)
 def _poster_from_barrier(bx, by, bw, bh):
     """Work out where the poster is, given where the barrier is.
 
@@ -209,6 +218,8 @@ def _poster_from_barrier(bx, by, bw, bh):
     return px, py, pw, ph
 
 
+# Report Section 4.1 -- Finding the poster in the frame (close-range,
+# top-clipped crop widening; ties to the 0.80-1.30 m standoff band, Section 2.3)
 def _expanded_close_crop(box, frame_w, frame_h):
     """Widen very close, top-clipped crops a little before identification.
 
@@ -236,12 +247,16 @@ def _expanded_close_crop(box, frame_w, frame_h):
 # square (the poster really is square); and if two are equally square, prefer
 # the bigger one. The minus sign flips area so that bigger counts as smaller
 # here, i.e. comes first.
+# Report Section 4.1 -- Finding the poster in the frame (candidate ranking:
+# squareness then size; the check that caught the "largest wins" labelling bug)
 def candidate_rank(candidate):
     x, y, box_w, box_h = candidate["box"]
     squareness = abs(box_w / box_h - ASPECT_RATIO_TARGET)
     return (candidate["degenerate"], squareness, -candidate["area"])
 
 
+# Report Section 4.1 -- Finding the poster in the frame (top-level poster
+# finder; results in Table 7 / Figure 9's IoU 0.00 failure case)
 def find_poster_region(image, debug=False, debug_path=None):
     """Return (x, y, w, h) for the most plausible poster region in `image`
     (BGR, as from camera_bgr()), or None if no plausible candidate survives.
@@ -321,22 +336,34 @@ find_poster_region.last_candidates = []
 
 
 # ---------------------------------------------------------------------------
+# Report Section 4.2/4.3 -- Naming the target, and knowing when to say nothing
 # Issue #8: target identification on an already-isolated poster crop
 # ---------------------------------------------------------------------------
 
 NO_MATCH = "NO_MATCH"
 TARGET_LABELS = tuple(CONFIG["target_labels"])
 
+# Report Section 4.3 -- Knowing when to say nothing (gates 1 and 2 of
+# Listing 2: confidence and margin. Section 7.4 Stage 1: 4 of 20 distractors
+# still got through on these two alone)
 # How sure the model has to be before we believe it. Tuned on real captures:
 # 7 of 8 targets clear both, while floor/no-poster patches stay under 0.50.
 # The margin stops us accepting a near coin-flip between two labels. See docs/find_poster_region_notes.md
 MIN_CONFIDENCE = 0.50            # top score must be at least this
 MIN_CONFIDENCE_MARGIN = 0.20     # ...and this far ahead of the runner-up
 
+# Report Section 4.3 -- Knowing when to say nothing (gate 3 of Listing 2: the
+# reference-similarity check that took distractor false-accepts to 0 of 20,
+# Section 7.4 Stage 2)
 # The model only knows 8 labels, so shown something else it still picks the
 # closest one, sometimes confidently. As a sanity check we also compare the
 # crop against the reference photo of whatever label it picked. See docs/find_poster_region_notes.md
 MIN_REFERENCE_SIMILARITY = -0.05
+# Report Section 7.4/8.1/8.2 -- Rejecting distractors, and the two matched
+# failure cases: this per-label floor was added for "camera" (Section 8.1,
+# the confidently-wrong headphones/camera confusion) but removed for
+# fire_extinguisher and coffee_mug (Section 7.4 Stages 3-4, Section 8.2)
+# because no floor value separated their real crops from real distractors.
 # Some labels get a stricter floor of their own. Only labels whose real
 # in-game posters actually score positively against their reference photo can
 # have one -- fire_extinguisher and coffee_mug deliberately don't, because
@@ -355,6 +382,10 @@ IDENTIFIER_SEED = 0
 _IDENTIFIER = None
 
 
+# Report Section 4.2 -- Naming the target (ResNet 18, frozen backbone, fresh
+# 8-way head trained on augmented copies of the 8 reference photos -- the
+# option chosen over ORB in Section 2.2/Table 2: 71.1% vs 53.9% top-1, and
+# faster. Section 4.2 also names the domain-shift gap this leaves.)
 class _TargetIdentifier:
     def __init__(self):
         try:
@@ -427,6 +458,9 @@ class _TargetIdentifier:
             T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
         ])
 
+    # Report Section 4.3 -- the reference-similarity gate's feature extraction
+    # (gray/lab/colour-histogram signal compared against each label's own
+    # reference photo)
     @staticmethod
     def _reference_features(image_bgr):
         resized = cv2.resize(
@@ -448,6 +482,8 @@ class _TargetIdentifier:
         cv2.normalize(hist, hist)
         return gray, lab.reshape(-1), hist
 
+    # Report Section 4.3 -- the reference-similarity score itself (Listing 2's
+    # third gate)
     def _reference_similarity(self, crop_bgr, label):
         gray, lab, hist = self._reference_features(crop_bgr)
         ref_gray, ref_lab, ref_hist = self.reference_features[label]
@@ -459,6 +495,9 @@ class _TargetIdentifier:
         hist_score = float(cv2.compareHist(hist, ref_hist, cv2.HISTCMP_CORREL))
         return 0.55 * gray_score + 0.35 * lab_score + 0.10 * hist_score
 
+    # Report Section 4.2/4.3 -- runs the classifier and assembles the scored
+    # dict (raw_label, confidence, margin, reference_similarity) that identify()
+    # below turns into an accept/NO_MATCH decision via Listing 2's three gates
     def score(self, crop_bgr):
         rgb = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2RGB)
         with self.torch.no_grad():
@@ -493,6 +532,8 @@ class _TargetIdentifier:
         }
 
 
+# Report Section 4.2 -- lazily builds the one-off classifier (Section 7.1's
+# "15-25 s wall-clock stall on the first identification" behaviour)
 def _get_identifier():
     global _IDENTIFIER
     if _IDENTIFIER is None:
@@ -503,6 +544,9 @@ def _get_identifier():
 # Every "couldn't identify it" answer is the same apart from the reason, so
 # build it in one place instead of writing the same dict out three times.
 # `reason` records which check failed, which is handy when debugging.
+# Report Section 3.2 -- component contract: Perception returns NO_MATCH with
+# 0.0 confidence when it cannot answer (a missing crop and a wrong guess are
+# treated the same, because neither is usable evidence)
 def no_match_result(reason):
     return {
         "label": NO_MATCH,
@@ -519,6 +563,9 @@ def no_match_result(reason):
     }
 
 
+# Report Section 3.1 Listing 1 -- the Vision -> Navigation interface, agreed
+# before any group code was written: identify(crop) -> (label, confidence).
+# Report Section 4.3 Listing 2 -- the three acceptance gates live in the body.
 def identify(crop):
     """Input: BGR poster crop from `find_poster_region()`.
 
@@ -580,6 +627,10 @@ identify.last_scores = {}
 _IDENTIFY_MAX_RANKED_CANDIDATES = 3  # see identify_frame
 
 
+# Report Section 4.1/4.4 -- top-level vision entry point called from
+# identify_at_station() in the controller: finds the poster (Section 4.1),
+# then tries several candidate crops and keeps whichever identify() (Section
+# 4.3) actually accepts, rather than trusting only the top-ranked box
 def identify_frame(image):
     """Find the poster, then identify it -- trying a few different ideas of
     where the poster is, rather than trusting the single best-ranked box.

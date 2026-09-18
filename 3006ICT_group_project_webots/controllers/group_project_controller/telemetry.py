@@ -1,3 +1,6 @@
+# Report Section 3.2 -- component contract: Telemetry takes state/pose/label/
+# time and writes/flushes as it goes, so a run stopped part way still leaves
+# usable data. Also the source of Section 7's mission_summary.csv figures.
 """Telemetry (Issue #18): per-run interval CSV and the committed summary row.
 
 Two files per Mission run:
@@ -24,6 +27,8 @@ SUMMARY_FIELDS = [
 ]
 
 
+# Report Section 3.2/6.3 -- the Telemetry component itself, driven by
+# Mission._log_telemetry_row() / Mission._finish() in the controller
 class TelemetryLogger:
     """Writes the interval row straight to disk (flushed) as each one is logged,
     rather than buffering in memory -- a Webots controller can be killed by
@@ -52,6 +57,8 @@ class TelemetryLogger:
 
     # Add one line to this run's CSV describing where the robot is and what
     # it is doing right now. flush() pushes it to disk straight away.
+    # Report Section 3.2 -- one interval row (state/pose/label/behaviour), the
+    # raw per-run detail behind the gitignored runs/ CSVs
     def log_step(self, sim_time, state, x, y, yaw, station, label, confidence,
                  behaviour, max_proximity):
         if not self.enabled:
@@ -63,6 +70,9 @@ class TelemetryLogger:
 
     # Called once at the end of the mission. Closes this run's CSV, then adds
     # one line to the shared summary file that the report uses.
+    # Report Section 7.2 -- appends the one summary row per run that Table 13
+    # /14's headline results (mean completion time, worst final distance,
+    # outcome) are computed from
     def log_summary(self, start_id, target, station, final_distance,
                     completion_time, outcome):
         if not self.enabled:

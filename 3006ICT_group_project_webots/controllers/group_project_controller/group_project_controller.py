@@ -32,6 +32,8 @@ from telemetry import TelemetryLogger
 
 
 # ------------------------------------------------------------------
+# Report Section 3 -- System architecture (supplied Webots e-puck interface
+# at the bottom of Figure 7: devices, GPS/InertialUnit, camera, ps0-ps7)
 # Webots setup
 # ------------------------------------------------------------------
 robot = Robot()
@@ -59,8 +61,11 @@ imu.enable(timestep)
 for sensor in ps:
     sensor.enable(timestep)
 
+# Report Section 6.4 Table 12 -- MAX_SPEED, the e-puck's real wheel motor limit
 MAX_SPEED = 6.28  # real e-puck wheel motor limit in Webots (was wrongly set to 10)
 
+# Report Section 5.4 -- The safety layer (WARN/STOP thresholds, Table 10,
+# Figure 10; see Section 8.5 for the sweep-methodology bug this survived)
 # Obstacle-sensor thresholds (Issue #4), measured from logged ps0-ps7 readings
 # across wall/barrier/station approaches at many angles - not guessed from the
 # workshop's example. STOP sits below the weakest verified near-contact
@@ -74,6 +79,8 @@ GRID = np.load(ROOT / "maps" / "occupancy_grid.npy")
 MISSION = json.loads((ROOT / "config" / "assessment_mission.json").read_text())
 target = MISSION["target"]
 
+# Report Section 2.4/5.1 -- clearance policy setup (selective inflation,
+# radius 4, computed once and reused by every plan_path_to() call)
 # Clearance policy (Issue #11): selective inflation, radius 4, so A* (Issue #12)
 # plans a path that keeps a one-cell buffer everywhere except close to a
 # station's observe cell, where the raw geometry is restored so all 8 stay
@@ -86,11 +93,15 @@ for station in CONFIG["stations"]:
     STATION_OBSERVE_CELLS.append(world_to_grid(observe_x, observe_y))
 PLANNING_GRID = apply_clearance_policy(GRID, "selective", STATION_OBSERVE_CELLS, radius=4)
 
+# Report Section 5.3 Table 9 -- Following the path (KP_HEADING=8.0 gave the
+# smallest cross-track error of the three gains tested, with no oscillation)
 # Waypoint-following constants (Issue #13), tuned in docs/control_tuning.md.
 KP_HEADING = 8.0
 BASE_SPEED = 5.0            # commanded wheel speed (rad/s); MAX_SPEED clamps it
 WAYPOINT_TOLERANCE = 0.05   # metres; well under half a grid cell (0.1 m)
 
+# Report Section 2.3 -- How far away the robot should stand (backs off from
+# the 0.295 m observe pose to the measured 0.80-1.30 m usable band, Table 3)
 # The station observe poses are the final stopping positions, but they are
 # very close to the posters. That can make the target crop clipped or too
 # distorted for the classifier, especially for targets like wall_clock. For
@@ -99,6 +110,9 @@ WAYPOINT_TOLERANCE = 0.05   # metres; well under half a grid cell (0.1 m)
 IDENTIFY_BACKOFF_DISTANCE = 0.5  # metres behind the supplied observe pose
 IDENTIFY_BACKOFF_STEP = 0.1      # shrink by one grid cell if the full backoff is blocked
 
+# Report Section 5.4 -- The safety layer (AVOID/STOP timings, recovery, and
+# STUCK_WINDOW_STEPS -- widened from 60 to 200 after Section 8.4's false
+# trigger during a legitimate ~180 degree turn-in)
 # Reactive avoidance and recovery (Issue #14). Sensor groups per Workshop 8 /
 # Issue #4: ps0-ps2 front-right, ps5-ps7 front-left.
 FRONT_RIGHT_PS = (0, 1, 2)
@@ -115,6 +129,9 @@ STUCK_MIN_DISPLACEMENT = 0.02   # metres; well below normal progress over that w
 REPLAN_DISPLACEMENT = 0.15      # metres off the next waypoint that forces a full replan
 
 # ------------------------------------------------------------------
+# Report Section 3 -- System architecture (the supplied Webots e-puck
+# interface helpers at the bottom of Figure 7: set_speed/get_pose/camera_bgr/
+# proximity_values are never reimplemented, only wrapped)
 # Provided low-level helpers
 # ------------------------------------------------------------------
 def set_speed(left, right):
@@ -127,6 +144,8 @@ def set_speed(left, right):
     right_motor.setVelocity(float(right))
 
 
+# Report Section 2.6 -- "no visual SLAM" decision: pose comes straight from
+# the supplied GPS + InertialUnit, never estimated by the controller
 def get_pose():
     """Return provided ground-truth-like pose (x, y, yaw)."""
     x, y, _ = gps.getValues()
@@ -134,6 +153,8 @@ def get_pose():
     return x, y, yaw
 
 
+# Report Section 4.4 -- raw camera pixels only, via the supplied camera
+# helper; Webots Camera Recognition is never called (Table 8)
 def camera_bgr():
     # Webots hands us the camera image as raw bytes in BGRA order. Reshape it
     # into a normal height x width x 4 image, then drop the alpha channel so
@@ -143,6 +164,8 @@ def camera_bgr():
     return cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
 
 
+# Report Section 5.4 -- The safety layer (raw ps0-ps7 readings feeding
+# select_behaviour() below)
 def proximity_values():
     # Read all 8 proximity sensors and return them as a list, in ps0-ps7 order.
     readings = []
@@ -151,6 +174,7 @@ def proximity_values():
     return readings
 
 
+# Report Section 5.4 Listing 4 -- The safety layer's WARN/STOP flags per side
 # True if ANY of the listed sensors is reading above the threshold, i.e. at
 # least one of them can see something that close.
 def any_sensor_above(readings, sensor_indexes, threshold):
@@ -160,6 +184,8 @@ def any_sensor_above(readings, sensor_indexes, threshold):
     return False
 
 
+# Report Section 5.4 -- feeds turn_away_direction() (which side to steer from)
+# and the max-proximity collision check used in Section 7's results table
 # The biggest reading out of the listed sensors. Used to work out which side
 # an obstacle is on, so we know which way to turn away from it.
 def largest_reading(readings, sensor_indexes):
@@ -174,6 +200,8 @@ def largest_reading(readings, sensor_indexes):
 # Group implementation
 # ------------------------------------------------------------------
 
+# Report Section 5.3 -- basic drive primitives underlying waypoint following
+# and the OBSERVE/FINAL_ALIGN rotation steps
 # Simple movement commands, built on top of set_speed(). We always go
 # through set_speed() so the max-speed limit only ever lives in one place.
 def drive_forward(speed):
@@ -200,6 +228,8 @@ def stop():
     set_speed(0.0, 0.0)
 
 
+# Report Section 5.3 -- angle/distance helpers behind the waypoint follower
+# (Listing 3's bearing_to/error and distance_to(wx, wy) > WAYPOINT_TOLERANCE)
 # Helper functions for working out angles and distances, built on top of
 # the provided get_pose().
 def normalise_angle(angle):
@@ -229,6 +259,9 @@ def bearing_to(x, y):
     return normalise_angle(target_heading - yaw)
 
 
+# Report Section 6.1/8.3 -- OBSERVE's heading check (the "right place, facing
+# the wrong way" bug: Navigator only ever targets (x, y), so this explicit
+# yaw alignment step had to be added before the camera could be trusted)
 # How far the robot still has to turn to be facing the way the station says
 # it should. Positive means turn left, negative means turn right.
 def yaw_error_to(station):
@@ -236,6 +269,8 @@ def yaw_error_to(station):
     return normalise_angle(station["observe_yaw"] - yaw)
 
 
+# Report Section 6.1 -- used by OBSERVE and FINAL_ALIGN to spin toward
+# observe_yaw
 # Spin on the spot in whichever direction closes that error.
 def rotate_towards_yaw(yaw_error):
     if yaw_error > 0:
@@ -244,12 +279,18 @@ def rotate_towards_yaw(yaw_error):
         rotate_in_place(-OBSERVE_TURN_SPEED)
 
 
+# Report Section 5.1/5.2 -- current pose in grid-cell terms, the start cell
+# A* plans from in plan_path_to() below
 def pose_to_cell():
     # Which grid square the robot is standing in right now.
     px, py, _ = get_pose()
     return world_to_grid(px, py)
 
 
+# Report Section 2.3 -- How far away the robot should stand: finds the
+# largest clear backoff (toward the measured 0.80-1.30 m band) along the
+# poster's own viewing line, shrinking toward the 0.295 m observe pose only
+# if the map blocks the full backoff
 def identify_position_for(station):
     """Return the world point to use for taking the identification image.
 
@@ -283,6 +324,9 @@ def identify_position_for(station):
 
 
 # ------------------------------------------------------------------
+# Report Section 5.2 -- Planning a route, and Section 8.4's second bug (a
+# safe, collision-free pose quantizing onto an obstacle cell in the 0.1 m
+# grid; fixed here by freeing the robot's own current cell for one plan only)
 # Waypoint following (Issue #13)
 # ------------------------------------------------------------------
 def plan_path_to(x_goal, y_goal):
@@ -318,6 +362,12 @@ def plan_path_to(x_goal, y_goal):
     return waypoints, raw_path
 
 
+# Report Section 3.1 Listing 1 -- the Navigation -> Control interface, agreed
+# before any group code was written: follow_path() takes the whole simplified
+# waypoint list, never a single waypoint or a bare heading.
+# Report Section 5.3 Listing 3 -- the proportional heading controller itself,
+# including the left/right sign fix from Section 5.3's "bug worth reporting"
+# (the task brief's left=base+turn, right=base-turn steered the wrong way).
 def follow_path(waypoints, base_speed=BASE_SPEED, kp=KP_HEADING):
     """Generator: call next() once per control step until it raises StopIteration.
 
@@ -344,8 +394,10 @@ def follow_path(waypoints, base_speed=BASE_SPEED, kp=KP_HEADING):
 
 
 # ------------------------------------------------------------------
-# Reactive avoidance with recovery (Issue #14)
+# Report Section 5.4 -- The safety layer (reactive avoidance + recovery)
 # ------------------------------------------------------------------
+# Report Section 5.4 -- picks which way to steer away, feeding AVOID and
+# STOP_ROTATE in the Navigator below
 # Which way to turn to get away from an obstacle. If only one side can see
 # it, turn away from that side. If both can, turn away from whichever side is
 # reading closest. Used by both the WARN (AVOID) and STOP responses.
@@ -361,6 +413,9 @@ def turn_away_direction(readings, left_triggered, right_triggered):
     return "left"
 
 
+# Report Section 5.4 Listing 4 -- the safety priority function itself
+# (Safety > Path following > Search), proven to pre-empt path following in
+# the deliberate obstacle test (Figure 11)
 def select_behaviour(left_warn, right_warn, left_stop, right_stop, has_path):
     """Workshop 8 priority, one function: Safety > Path following > Search."""
     if left_stop or right_stop:
@@ -372,6 +427,10 @@ def select_behaviour(left_warn, right_warn, left_stop, right_stop, has_path):
     return "SEARCH"
 
 
+# Report Section 5.3/5.4 -- the Navigator drives Section 3's "Navigator"
+# architecture box: normal path following (5.3) plus the four-layer safety
+# override (5.4: STOP/AVOID/FOLLOW/SEARCH) and the stuck-detector recovery
+# (5.4/8.4). GOTO_OBSERVE in the Mission class below reuses this same class.
 class Navigator:
     """Drives to (goal_x, goal_y), handling obstacles the map didn't capture.
 
@@ -465,6 +524,8 @@ class Navigator:
         if self.state == "PLAN":
             self._replan("initial plan")
 
+        # Report Section 5.4/8.4 -- the stuck detector (window widened from 60
+        # to 200 steps after false-triggering on a legitimate ~180 degree turn)
         # Stuck detector: runs in every state except while a recovery is
         # already under way, so it can break an endless STOP/AVOID cycle too.
         if self.state not in ("RECOVER_BACKOFF", "RECOVER_ROTATE") and len(self.pos_history) == STUCK_WINDOW_STEPS:
@@ -556,6 +617,10 @@ class Navigator:
 
 
 # ------------------------------------------------------------------
+# Report Section 3.3 -- "How the system was actually built": the stub used
+# for the first end-to-end run on 16 September, before real vision/planner
+# were finished, kept behind a flag afterwards as the diagnostic tool used in
+# Section 8 to answer "where did the first wrong decision happen?"
 # Perception (Issue #29 stub, kept permanently -- not removed once verified,
 # unlike the ephemeral test harnesses used to validate Issues #11-#15 -- so
 # any component can be stubbed again later to isolate a failure). Default
@@ -590,6 +655,8 @@ _DEBUG_CAPTURE_DIR = os.environ.get("DEBUG_CAPTURE_DIR")
 _debug_capture_count = {}
 
 
+# Report Section 6.1 -- called from the IDENTIFY state; routes to either the
+# Section 3.3 stub or vision_utils.identify_frame() (Section 4.1/4.4)
 def identify_at_station(current_station_id):
     """Capture a frame and identify the target, or use the Issue #29 stub."""
     if STUB_PERCEPTION:
@@ -602,6 +669,8 @@ def identify_at_station(current_station_id):
 
 
 # ------------------------------------------------------------------
+# Report Section 6 -- Putting it together: the mission state machine (this
+# whole block/class implements Figure 12 and Table 11)
 # Mission state machine (Issue #16)
 #
 # PLAN -> NAVIGATE -> OBSERVE -> IDENTIFY -> GOTO_OBSERVE -> FINAL_ALIGN -> FINAL_HOLD -> STOP
@@ -625,6 +694,9 @@ def identify_at_station(current_station_id):
 # component signatures this drives. Replaces Issue #29's simpler skeleton
 # with the real components against an interface that skeleton already proved.
 # ------------------------------------------------------------------
+# Report Section 4.3/6.4 Table 12 -- IDENTIFY consensus rule: 3 of the last 5
+# frames, changed from "3 consecutive" after Section 4.3/8.1 found a single
+# noisy frame could repeatedly break the stricter rule
 IDENTIFY_CONSENSUS_FRAMES = 3   # agreeing frames required, within the trailing window, to accept an identification
 IDENTIFY_WINDOW_FRAMES = 5      # trailing window IDENTIFY_CONSENSUS_FRAMES is counted over, so one bad frame doesn't reset progress
 IDENTIFY_MAX_FRAMES = 20        # give up on this station (treat as NO_MATCH) past this many frames
@@ -634,6 +706,7 @@ OBSERVE_TURN_SPEED = 2.0        # rad/s wheel speed while aligning to observe_ya
 OBSERVE_YAW_STEP_BUDGET = int(os.environ.get("OBSERVE_YAW_STEP_BUDGET", "3000"))  # lower via env var to test the failure path
 NAVIGATE_STEP_BUDGET = int(os.environ.get("NAVIGATE_STEP_BUDGET", "3000"))  # ~96 s; lower via env var to test the failure path
 
+# Report Section 6.2 -- Stopping in the right place
 # Final stop rule (Issue #17): the literal success criterion is centre-within-
 # 0.20 m, stopped, no collision -- so ARRIVAL_TOLERANCE sits well inside that
 # with margin for pose noise and the settle, and the mission's own accept/
@@ -642,6 +715,7 @@ ARRIVAL_TOLERANCE = 0.10        # metres; half the 0.20 m requirement
 FINAL_HOLD_STEPS = 20           # consecutive zero-velocity steps required before the mission ends
 FINAL_ALIGN_STEP_BUDGET = int(os.environ.get("FINAL_ALIGN_STEP_BUDGET", "3000"))  # lower via env var to test the failure path
 
+# Report Section 6.3 -- The time budget and degraded mode
 # Telemetry and the 4:00 time budget (Issue #18).
 TELEMETRY_ENABLED = os.environ.get("TELEMETRY_ENABLED", "1") == "1"       # off to measure logging overhead
 TELEMETRY_LOG_INTERVAL_STEPS = 10   # ~0.32 s; log at an interval, not every timestep, to keep the loop cheap
@@ -658,6 +732,9 @@ RUNS_DIR = ROOT / "runs"
 MISSION_SUMMARY_PATH = ROOT.parent / "docs" / "data" / "mission_summary.csv"
 
 
+# Report Section 6 -- the Mission class is the whole state machine: Figure 12,
+# Table 11's per-state behaviour, Section 6.2's stopping rule and Section 6.3's
+# time budget/degraded mode all live in its methods below.
 class Mission:
     """Drives the whole mission. Call step() once per robot.step(timestep)."""
 
@@ -713,6 +790,9 @@ class Mission:
             print(f"MISSION: state={self.state} {detail}".rstrip())
             self._last_logged_state = self.state
 
+    # Report Section 6.1 Table 11 -- the orange "return to PLAN, station
+    # marked visited" arrows in Figure 12 (NAVIGATE/OBSERVE/IDENTIFY failure
+    # paths). Ensures the mission never loops: the unvisited list only shrinks.
     # Give up on this station and go back to PLAN to choose another one.
     def _skip_current_station(self, reason):
         print(f"MISSION: {reason}, marking {self.station['id']} visited")
@@ -730,6 +810,8 @@ class Mission:
     def _elapsed_time(self):
         return robot.getTime() - self.mission_start_time
 
+    # Report Section 6.3 -- the time budget check, run every step in every
+    # state (not just when planning); forces FAILED with outcome TIMEOUT
     # Print a warning as we pass 50%, 75% and 90% of the time budget, and
     # fail the mission outright once the whole budget is gone.
     def _check_time_budget(self):
@@ -747,6 +829,8 @@ class Mission:
             self._log(f"TIME_BUDGET of {TIME_BUDGET:.0f}s exceeded")
             stop()
 
+    # Report Section 6.3 -- degraded mode: past 90% of the budget, commit to
+    # the best unconfirmed sighting instead of continuing the full search
     def _check_degraded_mode(self):
         # Issue #18 degraded mode: cross-cutting like the budget check above,
         # not just a PLAN-time decision -- a station chosen before the 90%
@@ -772,6 +856,7 @@ class Mission:
         self.nav_steps = 0
         self.state = "GOTO_OBSERVE"
 
+    # Report Section 6.3 -- records the evidence degraded mode above commits to
     def _note_candidate(self, label, confidence):
         # Issue #18 degraded mode's evidence: any real (non-consensus-confirmed)
         # sighting of the target, kept even after the station is marked visited.
@@ -780,6 +865,7 @@ class Mission:
         if self.best_candidate is None or confidence > self.best_candidate["confidence"]:
             self.best_candidate = {"station": self.station, "confidence": confidence}
 
+    # Report Section 3.2 -- feeds the Telemetry component's interval CSV
     def _log_telemetry_row(self):
         if self.telemetry is None or not self.telemetry.enabled:
             return
@@ -809,6 +895,8 @@ class Mission:
             max_proximity=round(largest_reading(proximity_values(), (0, 1, 2, 3, 4, 5, 6, 7)), 1),
         )
 
+    # Report Section 7.2 -- writes the Telemetry summary row and the console
+    # "MISSION RESULT" block Section 7's matrix runs were read from
     def _finish(self):
         if self._finished:
             return
@@ -890,6 +978,7 @@ class Mission:
             "===========================================\n"
         )
 
+    # Report Section 6 -- one control step through Figure 12's state machine
     def step(self):
         self._check_time_budget()
         self._check_degraded_mode()
@@ -918,6 +1007,8 @@ class Mission:
         if self.done():
             self._finish()
 
+    # Report Section 6.1 Table 11 -- PLAN state (uses Section 2.5/5.5's
+    # nearest-first chooser; empty unvisited list ends the mission in FAILED)
     # PLAN: pick the cheapest unvisited station to go and look at next.
     def _plan(self):
         if not self.unvisited:
@@ -938,6 +1029,9 @@ class Mission:
         self.nav_steps = 0
         self.state = "NAVIGATE"
 
+    # Report Section 6.1 Table 11 -- NAVIGATE state (delegates to the
+    # Section 5.3/5.4 Navigator; step-budget failure marks the station
+    # visited and returns to PLAN)
     # NAVIGATE: let the Navigator drive us to the identify pose.
     def _navigate(self):
         self._log(f"station={self.station['id']} final_observe={self.station['observe']}")
@@ -950,6 +1044,9 @@ class Mission:
         elif self.nav_steps >= NAVIGATE_STEP_BUDGET:
             self._skip_current_station(f"NAVIGATE failed to reach {self.station['id']} within the step budget")
 
+    # Report Section 6.1 Table 11 -- OBSERVE state, and the fix for Section
+    # 8.3's "right place, facing the wrong way" bug: rotates to observe_yaw
+    # before the camera is trusted, using OBSERVE_SETTLE_STEPS to stop drift
     # OBSERVE: turn on the spot to face the poster, then sit still for a
     # moment so the camera image isn't blurred by movement.
     def _observe(self):
@@ -977,6 +1074,9 @@ class Mission:
             self.label_window = []
             self.state = "IDENTIFY"
 
+    # Report Section 6.1 Table 11 -- IDENTIFY state, and Section 4.3's
+    # "3 of the last 5 frames" consensus rule (this is the rolling-window
+    # vote implementation, tied to Section 8.1's confidently-wrong case)
     # IDENTIFY: take camera frames and only believe the answer once the same
     # label comes back on enough frames in a row.
     def _identify(self):
@@ -1042,6 +1142,9 @@ class Mission:
                 return
             self._skip_current_station(f"IDENTIFY reached {IDENTIFY_MAX_FRAMES} frames with no consensus at {self.station['id']}")
 
+    # Report Section 6.1 Table 11 / 6.2 -- GOTO_OBSERVE state: the explicit
+    # distance check against ARRIVAL_TOLERANCE that makes "stopped in the
+    # right place" a real measurement rather than a step-count assumption
     # GOTO_OBSERVE: the target is confirmed, so drive the last bit up to the
     # station's official stopping point.
     def _goto_observe(self):
@@ -1064,6 +1167,7 @@ class Mission:
             self._log(f"GOTO_OBSERVE failed to close within {ARRIVAL_TOLERANCE} m of {self.station['id']} within the step budget")
             stop()
 
+    # Report Section 6.1 Table 11 -- FINAL_ALIGN state
     # FINAL_ALIGN: we're in the right place, now turn to face the right way.
     def _final_align(self):
         self._log(f"station={self.station['id']}")
@@ -1081,6 +1185,9 @@ class Mission:
         self.final_hold_steps = 0
         self.state = "FINAL_HOLD"
 
+    # Report Section 6.1 Table 11 / 6.2 -- FINAL_HOLD state: holds for
+    # FINAL_HOLD_STEPS, then prints final position/distance/heading error --
+    # the console evidence a marker can read directly (Section 6.2)
     # FINAL_HOLD: sit completely still for a while, so the marker can see the
     # robot really has stopped, then record the final numbers.
     def _final_hold(self):
@@ -1103,6 +1210,9 @@ class Mission:
 
 
 # ------------------------------------------------------------------
+# Report Section 3.3 -- Main: the integration point, running one control step
+# at a time (robot.step(timestep) -> mission.step()) until done() or Webots
+# stops the controller. This is the loop every matrix run in Section 7 used.
 # Main
 # ------------------------------------------------------------------
 # Sets everything up, then runs the mission one control step at a time until
